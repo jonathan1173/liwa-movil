@@ -89,3 +89,45 @@ export async function getEthnicities() {
   if (error) throw error;
   return data ?? [];
 }
+
+// ─── Product helpers ──────────────────────────────────────────────────────────
+
+export interface Product {
+  id: number;
+  title: string;
+  description: string | null;
+  price: number;
+  status: string;
+  created_at: string;
+  category: { name: string } | null;
+  condition: { name: string } | null;
+  images: { url: string; display_order: number }[];
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('product')
+    .select(`
+      id,
+      title,
+      description,
+      price,
+      status,
+      created_at,
+      category:category_id ( name ),
+      condition:condition_id ( name ),
+      images:product_image ( url, display_order )
+    `)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Sort images by display_order for each product
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    images: (p.images ?? []).sort(
+      (a: any, b: any) => a.display_order - b.display_order,
+    ),
+  }));
+}
