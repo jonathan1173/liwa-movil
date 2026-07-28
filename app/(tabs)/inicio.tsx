@@ -49,7 +49,7 @@ function ProductCard({ product }: { product: Product }) {
             </Text>
           )}
 
-          <View style={styles.priceRow}>
+          <View style={styles.priceColumn}>
             <Text style={styles.price}>
               C$ {product.price.toLocaleString('es-GT', {
                 minimumFractionDigits: 2,
@@ -286,9 +286,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  priceColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginTop: 4,
     flexWrap: 'wrap',
