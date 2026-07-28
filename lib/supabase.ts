@@ -160,6 +160,12 @@ export async function getProductById(id: number): Promise<ProductDetail> {
 
   return {
     ...data,
+    category: Array.isArray((data as any).category)
+      ? ((data as any).category[0] ?? null)
+      : (data as any).category ?? null,
+    condition: Array.isArray((data as any).condition)
+      ? ((data as any).condition[0] ?? null)
+      : (data as any).condition ?? null,
     images: ((data as any).images ?? []).sort(
       (a: any, b: any) => a.display_order - b.display_order,
     ),
