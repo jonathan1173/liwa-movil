@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 28,
     paddingBottom: 48,
   },
   pageTitle: {
