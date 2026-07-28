@@ -1,7 +1,7 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getProducts, Product } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -21,7 +21,11 @@ function ProductCard({ product }: { product: Product }) {
   const firstImage = product.images[0]?.url ?? null;
 
   return (
-    <TouchableOpacity activeOpacity={0.88} style={styles.cardWrapper}>
+    <TouchableOpacity
+      activeOpacity={0.88}
+      style={styles.cardWrapper}
+      onPress={() => router.push(`/(tabs)/producto/${product.id}` as any)}
+    >
       <View style={[neumorphicStyles.card, styles.productCard]}>
 
         {/* Image area — always rendered, empty if no image */}

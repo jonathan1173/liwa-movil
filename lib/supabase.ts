@@ -132,6 +132,42 @@ export async function getProducts(): Promise<Product[]> {
   }));
 }
 
+// ─── Product Detail ────────────────────────────────────────────────────────────
+
+export interface ProductDetail extends Product {
+  seller: { full_name: string | null } | null;
+}
+
+export async function getProductById(id: number): Promise<ProductDetail> {
+  const { data, error } = await supabase
+    .from('product')
+    .select(`
+      id,
+      title,
+      description,
+      price,
+      status,
+      created_at,
+      category:category_id ( name ),
+      condition:condition_id ( name ),
+      images:product_image ( url, display_order ),
+      seller:user_id ( full_name )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+
+  return {
+    ...data,
+    images: ((data as any).images ?? []).sort(
+      (a: any, b: any) => a.display_order - b.display_order,
+    ),
+    seller: (data as any).seller ?? null,
+  } as ProductDetail;
+}
+
+
 
 
 // Publicaciones de productos

@@ -94,6 +94,16 @@ export default function TabLayout() {
       {/* Hidden legacy screens */}
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="two" options={{ href: null }} />
+
+      {/* ── Detalle de producto (ruta dinámica, sin tab) ── */}
+      <Tabs.Screen
+        name="producto/[id]"
+        options={{
+          href: null,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }
