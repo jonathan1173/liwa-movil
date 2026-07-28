@@ -1,7 +1,7 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getProducts, Product } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -127,15 +127,7 @@ export default function InicioScreen() {
             </Text>
           </View>
 
-          {/* Botón Publicar en lugar de la 'L' */}
-          <TouchableOpacity
-            style={[neumorphicStyles.button, styles.publishNavBtn]}
-            onPress={() => router.push('/publicar')} // O la ruta correspondiente a tu pantalla
-            activeOpacity={0.85}
-          >
-            <Ionicons name="add-circle-outline" size={18} color={Colors.white} />
-            <Text style={styles.publishNavBtnText}>Publicar</Text>
-          </TouchableOpacity>
+
         </View>
 
         {/* Search bar */}

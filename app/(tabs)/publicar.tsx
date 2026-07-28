@@ -8,6 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -150,6 +151,21 @@ export default function PublicarScreen() {
   const [titleError, setTitleError] = useState('');
   const [priceError, setPriceError] = useState('');
 
+  // Reset form every time the screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      setImages([null, null, null, null, null]);
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setCategory(null);
+      setCondition(null);
+      setTitleError('');
+      setPriceError('');
+      isSubmitting.current = false;
+    }, []),
+  );
+
   // Load Categories & Conditions
   useEffect(() => {
     async function load() {
@@ -260,9 +276,9 @@ export default function PublicarScreen() {
         }, 600);
       }
     } catch (err: any) {
-      isSubmitting.current = false;
       Alert.alert('Error al publicar', err.message ?? 'Inténtalo de nuevo');
     } finally {
+      isSubmitting.current = false;
       setPublishing(false);
       setUploadProgress('');
     }

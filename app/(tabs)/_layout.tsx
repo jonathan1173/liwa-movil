@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { Colors } from '@/constants/NeumorphicStyles';
 
 function TabIcon({
@@ -18,6 +18,14 @@ function TabIcon({
         size={22}
         color={focused ? Colors.white : Colors.textSecondary}
       />
+    </View>
+  );
+}
+
+function PublishTabIcon() {
+  return (
+    <View style={styles.publishFab}>
+      <Ionicons name="add" size={28} color={Colors.white} />
     </View>
   );
 }
@@ -61,6 +69,16 @@ export default function TabLayout() {
         }}
       />
 
+      {/* ── Publicar (centro) ── */}
+      <Tabs.Screen
+        name="publicar"
+        options={{
+          title: '',
+          tabBarIcon: () => <PublishTabIcon />,
+          tabBarLabel: () => null,
+        }}
+      />
+
       {/* ── Perfil ── */}
       <Tabs.Screen
         name="perfil"
@@ -95,5 +113,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 5,
+  },
+  publishFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    // Neumorphic elevation
+    shadowColor: Colors.shadowDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 10,
   },
 });

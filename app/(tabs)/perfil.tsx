@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
+import { signOut, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { supabase, signOut } from '@/lib/supabase';
-import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface UserProfile {
   full_name: string | null;
@@ -158,18 +158,6 @@ export default function PerfilScreen() {
               </View>
             </View>
 
-            {/* Banner */}
-            <View style={[neumorphicStyles.card, styles.banner]}>
-              <View style={styles.bannerIcon}>
-                <Ionicons name="bag-handle-outline" size={28} color={Colors.white} />
-              </View>
-              <View style={styles.bannerText}>
-                <Text style={styles.bannerTitle}>Tu mercado, tu comunidad</Text>
-                <Text style={neumorphicStyles.subtitle}>
-                  Compra y vende de forma segura
-                </Text>
-              </View>
-            </View>
 
             {/* Sign out */}
             <TouchableOpacity
