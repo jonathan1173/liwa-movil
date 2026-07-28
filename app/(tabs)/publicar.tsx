@@ -7,8 +7,7 @@ import {
 } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -350,9 +349,9 @@ export default function PublicarScreen() {
 
             <View style={styles.gap} />
 
-            <Text style={neumorphicStyles.label}>Precio (Q)</Text>
+            <Text style={neumorphicStyles.label}>Precio </Text>
             <View style={[neumorphicStyles.inputContainer, priceError ? styles.inputErr : null]}>
-              <Text style={styles.currency}>Q</Text>
+              <Text style={styles.currency}>C$</Text>
               <TextInput
                 style={neumorphicStyles.inputText}
                 placeholder="0.00"
@@ -451,7 +450,7 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 28,
     paddingBottom: 48,
     gap: 16,
   },

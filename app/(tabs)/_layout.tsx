@@ -76,6 +76,7 @@ export default function TabLayout() {
           title: '',
           tabBarIcon: () => <PublishTabIcon />,
           tabBarLabel: () => null,
+          tabBarStyle: { display: 'none' },
         }}
       />
 
