@@ -26,7 +26,7 @@ import {
     View,
 } from 'react-native';
 
-const MAX_IMAGES = 5;
+const MAX_IMAGES = 4;
 
 interface Option {
   id: number;
@@ -132,7 +132,7 @@ function ImageSlot({
 
 // ─── Main Publicar Screen ────────────────────────────────────────────────────
 export default function PublicarScreen() {
-  const [images, setImages] = useState<(string | null)[]>([null, null, null, null, null]);
+  const [images, setImages] = useState<(string | null)[]>([null, null, null, null]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -153,7 +153,7 @@ export default function PublicarScreen() {
   // Reset form every time the screen gains focus
   useFocusEffect(
     useCallback(() => {
-      setImages([null, null, null, null, null]);
+      setImages([null, null, null, null]);
       setTitle('');
       setDescription('');
       setPrice('');
@@ -480,6 +480,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+    justifyContent: 'center',
   },
   imageSlot: {
     width: SLOT_SIZE,

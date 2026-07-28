@@ -226,7 +226,7 @@ export default function ProductoDetailScreen() {
           <View style={styles.priceBox}>
             <Text style={styles.priceLabel}>Precio</Text>
             <Text style={styles.price}>
-              Q{product.price.toLocaleString('es-GT', {
+              C$ {product.price.toLocaleString('es-GT', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   // Back button
   backRow: {
     position: 'absolute',
-    top: 16,
+    top: 28,
     left: 20,
     zIndex: 10,
   },
