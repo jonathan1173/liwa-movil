@@ -1,7 +1,7 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getProducts, Product } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -51,7 +51,7 @@ function ProductCard({ product }: { product: Product }) {
 
           <View style={styles.priceRow}>
             <Text style={styles.price}>
-              Q{product.price.toLocaleString('es-GT', {
+              C$ {product.price.toLocaleString('es-GT', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -126,9 +126,16 @@ export default function InicioScreen() {
               Bienvenido a Liwa
             </Text>
           </View>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>L</Text>
-          </View>
+
+          {/* Botón Publicar en lugar de la 'L' */}
+          <TouchableOpacity
+            style={[neumorphicStyles.button, styles.publishNavBtn]}
+            onPress={() => router.push('/publicar')} // O la ruta correspondiente a tu pantalla
+            activeOpacity={0.85}
+          >
+            <Ionicons name="add-circle-outline" size={18} color={Colors.white} />
+            <Text style={styles.publishNavBtnText}>Publicar</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search bar */}
@@ -313,5 +320,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
     textTransform: 'uppercase',
+  },
+  publishNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 6,
+  },
+  publishNavBtnText: {
+    color: Colors.white,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

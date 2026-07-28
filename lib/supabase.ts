@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ximkltsvydnzvudfojay.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_BC6S7Wpdm_0tEugFze-7FQ_qPcV9o3K';
@@ -130,4 +130,87 @@ export async function getProducts(): Promise<Product[]> {
       (a: any, b: any) => a.display_order - b.display_order,
     ),
   }));
+}
+
+
+
+// Publicaciones de productos
+
+// ─── Create Product & Upload Helpers ──────────────────────────────────────────
+
+export interface CreateProductInput {
+  title: string;
+  description: string;
+  price: number;
+  category_id: number | null;
+  condition_id: number | null;
+}
+
+export async function createProduct(input: CreateProductInput): Promise<number> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  const { data, error } = await supabase
+    .from('product')
+    .insert({
+      user_id: userData.user.id,
+      title: input.title,
+      description: input.description,
+      price: input.price,
+      category_id: input.category_id,
+      condition_id: input.condition_id,
+      status: 'active',
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
+
+export async function uploadProductImage(
+  imageUri: string,
+  productId: number,
+  index: number
+): Promise<string> {
+  // 1. Obtener la extensión del archivo
+  const fileExt = imageUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const filePath = `products/${productId}/${Date.now()}_${index}.${fileExt}`;
+
+  // 2. Convertir la URI local en ArrayBuffer para Expo / React Native
+  const response = await fetch(imageUri);
+  const blob = await response.arrayBuffer();
+
+  // 3. Subir al bucket "PRODUCT"
+  const { error: uploadError } = await supabase.storage
+    .from('product')
+    .upload(filePath, blob, {
+      contentType: `image/${fileExt === 'png' ? 'png' : 'jpeg'}`,
+      upsert: true,
+    });
+
+  if (uploadError) throw uploadError;
+
+  // 4. Obtener URL pública
+  const { data: urlData } = supabase.storage
+    .from('product')
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
+}
+
+export async function addProductImage(
+  productId: number,
+  url: string,
+  displayOrder: number
+) {
+  const { error } = await supabase.from('product_image').insert({
+    product_id: productId,
+    url,
+    display_order: displayOrder,
+  });
+
+  if (error) throw error;
 }
