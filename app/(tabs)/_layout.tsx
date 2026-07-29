@@ -104,6 +104,16 @@ export default function TabLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+
+      {/* ── Favoritos (accesible desde perfil, sin tab) ── */}
+      <Tabs.Screen
+        name="favoritos"
+        options={{
+          href: null,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }

@@ -256,3 +256,88 @@ export async function addProductImage(
 
   if (error) throw error;
 }
+
+// ─── Favorites helpers ────────────────────────────────────────────────────────
+
+export interface FavoriteProduct {
+  id: number;
+  favoriteId: number;
+  title: string;
+  price: number;
+  status: string;
+  category: { name: string } | null;
+  condition: { name: string } | null;
+  images: { url: string; display_order: number }[];
+}
+
+/** Devuelve todos los productos favoritos del usuario autenticado */
+export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
+  const { data, error } = await supabase
+    .from('favorite')
+    .select(`
+      id,
+      product:product_id (
+        id,
+        title,
+        price,
+        status,
+        category:category_id ( name ),
+        condition:condition_id ( name ),
+        images:product_image ( url, display_order )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    favoriteId: row.id,
+    id: row.product.id,
+    title: row.product.title,
+    price: row.product.price,
+    status: row.product.status,
+    category: Array.isArray(row.product.category)
+      ? (row.product.category[0] ?? null)
+      : row.product.category ?? null,
+    condition: Array.isArray(row.product.condition)
+      ? (row.product.condition[0] ?? null)
+      : row.product.condition ?? null,
+    images: (row.product.images ?? []).sort(
+      (a: any, b: any) => a.display_order - b.display_order,
+    ),
+  }));
+}
+
+/** Verifica si un producto ya está en favoritos del usuario */
+export async function isFavorite(userId: string, productId: number): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('favorite')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data !== null;
+}
+
+/** Agrega un producto a favoritos */
+export async function addFavorite(userId: string, productId: number): Promise<void> {
+  const { error } = await supabase
+    .from('favorite')
+    .insert({ user_id: userId, product_id: productId });
+
+  if (error) throw error;
+}
+
+/** Elimina un producto de favoritos */
+export async function removeFavorite(userId: string, productId: number): Promise<void> {
+  const { error } = await supabase
+    .from('favorite')
+    .delete()
+    .eq('user_id', userId)
+    .eq('product_id', productId);
+
+  if (error) throw error;
+}

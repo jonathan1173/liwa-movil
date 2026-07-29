@@ -1,5 +1,12 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getProductById, ProductDetail } from '@/lib/supabase';
+import {
+  addFavorite,
+  getProductById,
+  isFavorite,
+  ProductDetail,
+  removeFavorite,
+} from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -140,6 +147,11 @@ export default function ProductoDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Favorite state
+  const [favorited, setFavorited] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   async function fetchProduct() {
     setLoading(true);
     setError(false);
@@ -153,8 +165,43 @@ export default function ProductoDetailScreen() {
     }
   }
 
+  async function checkFavorite(uid: string) {
+    try {
+      const result = await isFavorite(uid, Number(id));
+      setFavorited(result);
+    } catch {
+      // silent
+    }
+  }
+
+  async function toggleFavorite() {
+    if (!currentUserId || favLoading) return;
+    setFavLoading(true);
+    try {
+      if (favorited) {
+        await removeFavorite(currentUserId, Number(id));
+        setFavorited(false);
+      } else {
+        await addFavorite(currentUserId, Number(id));
+        setFavorited(true);
+      }
+    } catch {
+      // silent — state reverts
+    } finally {
+      setFavLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (id) fetchProduct();
+
+    // Get current user and check favorite status
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setCurrentUserId(user.id);
+        checkFavorite(user.id);
+      }
+    });
   }, [id]);
 
   if (loading) return <Skeleton />;
@@ -184,7 +231,7 @@ export default function ProductoDetailScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back button — floating over the carousel */}
+        {/* Back button + Favorite button — floating over the carousel */}
         <View style={styles.backRow}>
           <TouchableOpacity
             style={styles.backCircle}
@@ -192,6 +239,19 @@ export default function ProductoDetailScreen() {
             activeOpacity={0.85}
           >
             <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.favCircle}
+            onPress={toggleFavorite}
+            activeOpacity={0.85}
+            disabled={favLoading}
+          >
+            <Ionicons
+              name={favorited ? 'heart' : 'heart-outline'}
+              size={20}
+              color={favorited ? '#e05c5c' : Colors.textPrimary}
+            />
           </TouchableOpacity>
         </View>
 
@@ -274,14 +334,30 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
-  // Back button
+  // Back + Favorite buttons row
   backRow: {
     position: 'absolute',
     top: 28,
     left: 20,
+    right: 20,
     zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   backCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.shadowDark,
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  favCircle: {
     width: 42,
     height: 42,
     borderRadius: 21,

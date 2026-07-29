@@ -143,17 +143,38 @@ export default function PerfilScreen() {
               </Text>
               <View style={styles.actionsRow}>
                 {[
-                  { icon: 'add-circle-outline', label: 'Publicar' },
-                  { icon: 'heart-outline', label: 'Favoritos' },
-                  { icon: 'chatbubble-outline', label: 'Mensajes' },
-                  { icon: 'settings-outline', label: 'Ajustes' },
-                ].map(({ icon, label }) => (
-                  <View key={label} style={styles.actionItem}>
+                  {
+                    icon: 'add-circle-outline',
+                    label: 'Publicar',
+                    onPress: () => router.push('/(tabs)/publicar' as any),
+                  },
+                  {
+                    icon: 'heart-outline',
+                    label: 'Favoritos',
+                    onPress: () => router.push('/(tabs)/favoritos' as any),
+                  },
+                  {
+                    icon: 'chatbubble-outline',
+                    label: 'Mensajes',
+                    onPress: () => {},
+                  },
+                  {
+                    icon: 'settings-outline',
+                    label: 'Ajustes',
+                    onPress: () => {},
+                  },
+                ].map(({ icon, label, onPress }) => (
+                  <TouchableOpacity
+                    key={label}
+                    style={styles.actionItem}
+                    onPress={onPress}
+                    activeOpacity={0.8}
+                  >
                     <View style={[neumorphicStyles.card, styles.actionCard]}>
                       <Ionicons name={icon as any} size={24} color={Colors.textPrimary} />
                     </View>
                     <Text style={styles.actionLabel}>{label}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>
