@@ -146,10 +146,12 @@ export default function PerfilScreen() {
                   {
                     icon: 'add-circle-outline',
                     label: 'Publicar',
+                    color:"#0000FF",
                     onPress: () => router.push('/(tabs)/publicar' as any),
                   },
                   {
                     icon: 'heart-outline',
+                    color:"#FF0000",
                     label: 'Favoritos',
                     onPress: () => router.push('/(tabs)/favoritos' as any),
                   },
@@ -163,7 +165,7 @@ export default function PerfilScreen() {
                     label: 'Ajustes',
                     onPress: () => {},
                   },
-                ].map(({ icon, label, onPress }) => (
+                ].map(({ icon, label, onPress, color }) => (
                   <TouchableOpacity
                     key={label}
                     style={styles.actionItem}
@@ -171,7 +173,7 @@ export default function PerfilScreen() {
                     activeOpacity={0.8}
                   >
                     <View style={[neumorphicStyles.card, styles.actionCard]}>
-                      <Ionicons name={icon as any} size={24} color={Colors.textPrimary} />
+                      <Ionicons name={icon as any} size={24} color={color ?? Colors.textPrimary} />
                     </View>
                     <Text style={styles.actionLabel}>{label}</Text>
                   </TouchableOpacity>
