@@ -114,6 +114,16 @@ export default function TabLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+
+      {/* ── Editar producto (sin tab) ── */}
+      <Tabs.Screen
+        name="producto/editar/[id]"
+        options={{
+          href: null,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }

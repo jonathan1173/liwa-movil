@@ -135,6 +135,7 @@ export async function getProducts(): Promise<Product[]> {
 // ─── Product Detail ────────────────────────────────────────────────────────────
 
 export interface ProductDetail extends Product {
+  user_id: string;
   seller: { full_name: string | null } | null;
 }
 
@@ -143,6 +144,7 @@ export async function getProductById(id: number): Promise<ProductDetail> {
     .from('product')
     .select(`
       id,
+      user_id,
       title,
       description,
       price,
@@ -174,6 +176,46 @@ export async function getProductById(id: number): Promise<ProductDetail> {
 }
 
 
+
+// ─── Update / Delete product ──────────────────────────────────────────────────
+
+export interface UpdateProductInput {
+  title: string;
+  description: string;
+  price: number;
+  category_id: number | null;
+  condition_id: number | null;
+  status: string;
+}
+
+export async function updateProductDetails(
+  productId: number,
+  input: UpdateProductInput
+): Promise<void> {
+  const { error } = await supabase
+    .from('product')
+    .update({
+      title: input.title,
+      description: input.description,
+      price: input.price,
+      category_id: input.category_id,
+      condition_id: input.condition_id,
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', productId);
+
+  if (error) throw error;
+}
+
+export async function deleteProduct(productId: number): Promise<void> {
+  const { error } = await supabase
+    .from('product')
+    .delete()
+    .eq('id', productId);
+
+  if (error) throw error;
+}
 
 
 // Publicaciones de productos

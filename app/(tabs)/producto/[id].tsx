@@ -1,6 +1,7 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import {
   addFavorite,
+  deleteProduct,
   getProductById,
   isFavorite,
   ProductDetail,
@@ -12,6 +13,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   NativeScrollEvent,
@@ -224,6 +226,29 @@ export default function ProductoDetailScreen() {
   }
 
   const hasDescription = product.description && product.description.trim().length > 0;
+  const isOwner = currentUserId !== null && product.user_id === currentUserId;
+
+  async function handleDelete() {
+    Alert.alert(
+      'Eliminar publicación',
+      '¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteProduct(Number(id));
+              router.replace('/(tabs)/inicio' as any);
+            } catch (err: any) {
+              Alert.alert('Error', err.message ?? 'No se pudo eliminar la publicación.');
+            }
+          },
+        },
+      ]
+    );
+  }
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
@@ -303,22 +328,54 @@ export default function ProductoDetailScreen() {
             </View>
           )}
 
-          {/* Seller */}
-          <SellerCard name={product.seller?.full_name ?? null} />
+          {/* Seller — solo visible para otros usuarios */}
+          {!isOwner && <SellerCard name={product.seller?.full_name ?? null} />}
 
-          {/* Contact button */}
-          <TouchableOpacity
-            style={[neumorphicStyles.button, styles.contactBtn]}
-            activeOpacity={0.85}
-          >
-            <Ionicons
-              name="chatbubble-ellipses-outline"
-              size={20}
-              color={Colors.white}
-              style={{ marginRight: 8 }}
-            />
-            <Text style={neumorphicStyles.buttonText}>Contactar vendedor</Text>
-          </TouchableOpacity>
+          {/* Acciones: Editar/Eliminar (dueño) o Contactar vendedor (otros) */}
+          {isOwner ? (
+            <View style={styles.ownerActions}>
+              <TouchableOpacity
+                style={[neumorphicStyles.button, styles.editBtn]}
+                activeOpacity={0.85}
+                onPress={() => router.push(`/(tabs)/producto/editar/${id}` as any)}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={20}
+                  color={Colors.white}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={neumorphicStyles.buttonText}>Editar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.deleteBtn]}
+                activeOpacity={0.85}
+                onPress={handleDelete}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color="#e05c5c"
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={styles.deleteBtnText}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[neumorphicStyles.button, styles.contactBtn]}
+              activeOpacity={0.85}
+            >
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={20}
+                color={Colors.white}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={neumorphicStyles.buttonText}>Contactar vendedor</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -562,6 +619,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
+  },
+
+  // Owner actions (edit + delete)
+  ownerActions: {
+    gap: 12,
+    marginTop: 4,
+  },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#e05c5c',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  deleteBtnText: {
+    color: '#e05c5c',
+    fontSize: 15,
+    fontWeight: '700',
   },
 
   // Error / retry
