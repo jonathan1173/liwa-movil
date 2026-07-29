@@ -79,7 +79,7 @@ export async function getCities() {
 }
 
 export async function getGenders() {
-  const { data, error } = await supabase.from('gender').select('id, name').order('name');
+  const { data, error } = await supabase.from('gender').select('id, name').order('id');
   if (error) throw error;
   return data ?? [];
 }

@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import {
-  View,
+  getCities,
+  getEthnicities,
+  getGenders,
+  supabase,
+  updateProfile,
+} from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  Modal,
-  FlatList,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import {
-  supabase,
-  updateProfile,
-  getCities,
-  getGenders,
-  getEthnicities,
-} from '@/lib/supabase';
-import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 
 interface Option {
   id: number;
@@ -223,7 +223,7 @@ export default function CompleteProfileScreen() {
             <Ionicons name="person-outline" size={20} color={Colors.textSecondary} />
             <TextInput
               style={neumorphicStyles.inputText}
-              placeholder="Jonathan Samuel"
+              placeholder="Usuario"
               placeholderTextColor={Colors.textPlaceholder}
               value={fullName}
               onChangeText={(t) => { setFullName(t); setErrors((e) => ({ ...e, fullName: '' })); }}
@@ -242,7 +242,7 @@ export default function CompleteProfileScreen() {
             <Text style={styles.atSign}>@</Text>
             <TextInput
               style={neumorphicStyles.inputText}
-              placeholder="jack"
+              placeholder="Username"
               placeholderTextColor={Colors.textPlaceholder}
               value={username}
               onChangeText={(t) => { setUsername(t.toLowerCase()); setErrors((e) => ({ ...e, username: '' })); }}
@@ -262,7 +262,7 @@ export default function CompleteProfileScreen() {
             <Ionicons name="call-outline" size={20} color={Colors.textSecondary} />
             <TextInput
               style={neumorphicStyles.inputText}
-              placeholder="99992222"
+              placeholder="Ej: 0000-0000"
               placeholderTextColor={Colors.textPlaceholder}
               value={phone}
               onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: '' })); }}
