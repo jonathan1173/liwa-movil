@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://ximkltsvydnzvudfojay.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_BC6S7Wpdm_0tEugFze-7FQ_qPcV9o3K';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -124,6 +124,34 @@ export async function getProducts(): Promise<Product[]> {
   if (error) throw error;
 
   // Sort images by display_order for each product
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    images: (p.images ?? []).sort(
+      (a: any, b: any) => a.display_order - b.display_order,
+    ),
+  }));
+}
+
+/** Devuelve todas las publicaciones del propio usuario (todos los estados) */
+export async function getMyProducts(userId: string): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('product')
+    .select(`
+      id,
+      title,
+      description,
+      price,
+      status,
+      created_at,
+      category:category_id ( name ),
+      condition:condition_id ( name ),
+      images:product_image ( url, display_order )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
   return (data ?? []).map((p: any) => ({
     ...p,
     images: (p.images ?? []).sort(

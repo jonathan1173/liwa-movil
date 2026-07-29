@@ -68,11 +68,11 @@ export default function PerfilScreen() {
 
   const initials = profile?.full_name
     ? profile.full_name
-        .split(' ')
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
     : '?';
 
   return (
@@ -146,24 +146,25 @@ export default function PerfilScreen() {
                   {
                     icon: 'add-circle-outline',
                     label: 'Publicar',
-                    color:"#0000FF",
+                    color: "#0000FF",
                     onPress: () => router.push('/(tabs)/publicar' as any),
                   },
                   {
                     icon: 'heart-outline',
-                    color:"#FF0000",
+                    color: "#FF0000",
                     label: 'Favoritos',
                     onPress: () => router.push('/(tabs)/favoritos' as any),
                   },
                   {
-                    icon: 'chatbubble-outline',
-                    label: 'Mensajes',
-                    onPress: () => {},
+                    icon: 'storefront-outline',
+                    label: 'Mis ventas',
+                    color: "#00AA00",
+                    onPress: () => router.push('/(tabs)/mis-publicaciones' as any),
                   },
                   {
                     icon: 'settings-outline',
                     label: 'Ajustes',
-                    onPress: () => {},
+                    onPress: () => { },
                   },
                 ].map(({ icon, label, onPress, color }) => (
                   <TouchableOpacity

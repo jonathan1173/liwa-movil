@@ -124,6 +124,16 @@ export default function TabLayout() {
           tabBarStyle: { display: 'none' },
         }}
       />
+
+      {/* ── Mis publicaciones (accesible desde perfil, sin tab) ── */}
+      <Tabs.Screen
+        name="mis-publicaciones"
+        options={{
+          href: null,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
     </Tabs>
   );
 }
