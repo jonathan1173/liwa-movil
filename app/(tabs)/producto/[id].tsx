@@ -6,8 +6,8 @@ import {
   isFavorite,
   ProductDetail,
   removeFavorite,
+  supabase,
 } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -25,6 +25,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -144,6 +145,7 @@ function Skeleton() {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ProductoDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -252,34 +254,37 @@ export default function ProductoDetailScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
+
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <View style={[styles.header, { paddingTop: insets.top  }]}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => router.back()}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+
+     
+
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={toggleFavorite}
+          activeOpacity={0.85}
+          disabled={favLoading}
+        >
+          <Ionicons
+            name={favorited ? 'heart' : 'heart-outline'}
+            size={22}
+            color={favorited ? '#e05c5c' : Colors.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back button + Favorite button — floating over the carousel */}
-        <View style={styles.backRow}>
-          <TouchableOpacity
-            style={styles.backCircle}
-            onPress={() => router.back()}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.favCircle}
-            onPress={toggleFavorite}
-            activeOpacity={0.85}
-            disabled={favLoading}
-          >
-            <Ionicons
-              name={favorited ? 'heart' : 'heart-outline'}
-              size={20}
-              color={favorited ? '#e05c5c' : Colors.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
-
         {/* Image Carousel */}
         <ImageCarousel images={product.images} />
 
@@ -391,20 +396,24 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
-  // Back + Favorite buttons row
-  backRow: {
-    position: 'absolute',
-    top: 28,
-    left: 20,
-    right: 20,
-    zIndex: 10,
+  // Header
+  header: {
     flexDirection: 'row',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    backgroundColor: Colors.background,
+    shadowColor: Colors.shadowDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  backCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  headerBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
@@ -412,20 +421,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 5,
   },
-  favCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+  headerTitle: {
+    flex: 1,
+    color: Colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    textAlign: 'center',
+    marginHorizontal: 8,
   },
 
   // Carousel
