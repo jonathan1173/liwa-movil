@@ -54,7 +54,8 @@ jobs:
         with:
           tag_name: latest
           name: "Última versión APK"
+          body: "Descarga directa de la última versión compilada."
           files: android/app/build/outputs/apk/release/app-release.apk
-          prerelease: true
+          make_latest: "true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
