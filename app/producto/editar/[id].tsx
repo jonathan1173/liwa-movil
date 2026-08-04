@@ -1,11 +1,12 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getProductById, supabase, updateProductDetails } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   FlatList,
   KeyboardAvoidingView,
   Modal,
@@ -198,6 +199,26 @@ export default function EditarProductoScreen() {
     });
   }, [loadingCatalogs, loadingProduct]);
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(`/producto/${id}` as any);
+    }
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
+
   function validate() {
     let ok = true;
     setTitleError('');
@@ -261,7 +282,7 @@ export default function EditarProductoScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backCircle} onPress={() => router.back()} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.backCircle} onPress={handleBack} activeOpacity={0.85}>
               <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
             <Text style={neumorphicStyles.title}>Editar publicación</Text>

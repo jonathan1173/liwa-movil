@@ -9,11 +9,12 @@ import {
   supabase,
 } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Dimensions,
   Image,
   NativeScrollEvent,
@@ -208,6 +209,26 @@ export default function ProductoDetailScreen() {
     });
   }, [id]);
 
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/inicio' as any);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack]),
+  );
+
   if (loading) return <Skeleton />;
 
   if (error || !product) {
@@ -259,7 +280,7 @@ export default function ProductoDetailScreen() {
       <View style={[styles.header, { paddingTop: insets.top  }]}>
         <TouchableOpacity
           style={styles.headerBtn}
-          onPress={() => router.back()}
+          onPress={handleBack}
           activeOpacity={0.85}
         >
           <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
@@ -342,7 +363,7 @@ export default function ProductoDetailScreen() {
               <TouchableOpacity
                 style={[neumorphicStyles.button, styles.editBtn]}
                 activeOpacity={0.85}
-                onPress={() => router.push(`/(tabs)/producto/editar/${id}` as any)}
+                onPress={() => router.push(`/producto/editar/${id}` as any)}
               >
                 <Ionicons
                   name="create-outline"

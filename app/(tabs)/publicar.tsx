@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    BackHandler,
     FlatList,
     Image,
     KeyboardAvoidingView,
@@ -150,7 +151,15 @@ export default function PublicarScreen() {
   const [titleError, setTitleError] = useState('');
   const [priceError, setPriceError] = useState('');
 
-  // Reset form every time the screen gains focus
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/inicio' as any);
+    }
+  }, []);
+
+  // Reset form & handle back navigation every time the screen gains focus
   useFocusEffect(
     useCallback(() => {
       setImages([null, null, null, null]);
@@ -162,7 +171,15 @@ export default function PublicarScreen() {
       setTitleError('');
       setPriceError('');
       isSubmitting.current = false;
-    }, []),
+
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack]),
   );
 
   // Load Categories & Conditions
@@ -296,7 +313,7 @@ export default function PublicarScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backCircle} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.backCircle} onPress={handleBack}>
               <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
             </TouchableOpacity>
             <Text style={neumorphicStyles.title}>Nueva publicación</Text>

@@ -94,46 +94,6 @@ export default function TabLayout() {
       {/* Hidden legacy screens */}
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="two" options={{ href: null }} />
-
-      {/* ── Detalle de producto (ruta dinámica, sin tab) ── */}
-      <Tabs.Screen
-        name="producto/[id]"
-        options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-
-      {/* ── Favoritos (accesible desde perfil, sin tab) ── */}
-      <Tabs.Screen
-        name="favoritos"
-        options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-
-      {/* ── Editar producto (sin tab) ── */}
-      <Tabs.Screen
-        name="producto/editar/[id]"
-        options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-
-      {/* ── Mis publicaciones (accesible desde perfil, sin tab) ── */}
-      <Tabs.Screen
-        name="mis-publicaciones"
-        options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
     </Tabs>
   );
 }

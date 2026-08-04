@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   RefreshControl,
   SafeAreaView,
@@ -42,7 +43,7 @@ function ProductRow({ product }: { product: Product }) {
   return (
     <TouchableOpacity
       activeOpacity={0.88}
-      onPress={() => router.push(`/(tabs)/producto/${product.id}` as any)}
+      onPress={() => router.push(`/producto/${product.id}` as any)}
     >
       <View style={[neumorphicStyles.card, styles.rowCard]}>
         {/* Thumbnail */}
@@ -165,10 +166,22 @@ export default function MisPublicacionesScreen() {
     }
   }
 
+  const handleBack = useCallback(() => {
+    router.replace('/(tabs)/perfil' as any);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       fetchProducts();
-    }, []),
+
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack]),
   );
 
   return (
@@ -189,7 +202,7 @@ export default function MisPublicacionesScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backCircle}
-            onPress={() => router.back()}
+            onPress={handleBack}
             activeOpacity={0.85}
           >
             <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />

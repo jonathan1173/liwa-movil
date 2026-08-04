@@ -7,6 +7,7 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Image,
   RefreshControl,
   SafeAreaView,
@@ -32,7 +33,7 @@ function FavoriteCard({
     <TouchableOpacity
       activeOpacity={0.88}
       style={styles.cardWrapper}
-      onPress={() => router.push(`/(tabs)/producto/${product.id}` as any)}
+      onPress={() => router.push(`/producto/${product.id}` as any)}
     >
       <View style={[neumorphicStyles.card, styles.productCard]}>
         {/* Image */}
@@ -139,11 +140,23 @@ export default function FavoritosScreen() {
     }
   }
 
-  // Re-fetch each time the screen gets focus
+  const handleBack = useCallback(() => {
+    router.replace('/(tabs)/perfil' as any);
+  }, []);
+
+  // Re-fetch each time the screen gets focus & handle hardware back
   useFocusEffect(
     useCallback(() => {
       fetchFavorites();
-    }, []),
+
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack]),
   );
 
   async function handleRemove(product: FavoriteProduct) {
@@ -193,7 +206,7 @@ export default function FavoritosScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backCircle}
-            onPress={() => router.back()}
+            onPress={handleBack}
             activeOpacity={0.85}
           >
             <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />

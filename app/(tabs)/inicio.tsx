@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   RefreshControl,
   SafeAreaView,
@@ -24,7 +25,7 @@ function ProductCard({ product }: { product: Product }) {
     <TouchableOpacity
       activeOpacity={0.88}
       style={styles.cardWrapper}
-      onPress={() => router.push(`/(tabs)/producto/${product.id}` as any)}
+      onPress={() => router.push(`/producto/${product.id}` as any)}
     >
       <View style={[neumorphicStyles.card, styles.productCard]}>
 
@@ -95,10 +96,18 @@ export default function InicioScreen() {
     }
   }
 
-  // Refetch every time the tab comes into focus
+  // Refetch every time the tab comes into focus & handle Android back button to prevent returning to auth/login
   useFocusEffect(
     useCallback(() => {
       fetchProducts();
+
+      const onBackPress = () => {
+        // We are at root (Inicio tab), so prevent going back to auth screens
+        return true; // Handle hardware back button by consuming event
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, []),
   );
 

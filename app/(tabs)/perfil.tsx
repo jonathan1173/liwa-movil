@@ -1,11 +1,12 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { signOut, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -47,6 +48,18 @@ export default function PerfilScreen() {
     }
     fetchProfile();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.replace('/(tabs)/inicio' as any);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, []),
+  );
 
   async function handleSignOut() {
     Alert.alert('Cerrar sesión', '¿Estás seguro que deseas salir?', [
@@ -153,13 +166,13 @@ export default function PerfilScreen() {
                     icon: 'heart-outline',
                     color: "#FF0000",
                     label: 'Favoritos',
-                    onPress: () => router.push('/(tabs)/favoritos' as any),
+                    onPress: () => router.push('/favoritos' as any),
                   },
                   {
                     icon: 'storefront-outline',
                     label: 'Mis ventas',
                     color: "#00AA00",
-                    onPress: () => router.push('/(tabs)/mis-publicaciones' as any),
+                    onPress: () => router.push('/mis-publicaciones' as any),
                   },
                   {
                     icon: 'settings-outline',
