@@ -207,7 +207,7 @@ export default function MisPublicacionesScreen() {
           >
             <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[neumorphicStyles.title, styles.pageTitle]}>Mis publicaciones</Text>
+          <Text style={[neumorphicStyles.title, styles.pageTitle]}>Mis Ventas</Text>
         </View>
 
         {/* Loading */}
