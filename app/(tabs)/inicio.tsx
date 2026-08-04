@@ -147,7 +147,7 @@ export default function InicioScreen() {
           Productos recientes
         </Text>
 
-        {/* Loading */}
+        {/* Loading (Loader integrado sin ocultar la interfaz superior) */}
         {loading && (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={Colors.accent} />
