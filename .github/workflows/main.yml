@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: 1. Descargar el código
         uses: actions/checkout@v4
@@ -21,13 +22,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
       - name: 3. Configurar Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: "17"
 
       - name: 4. Instalar dependencias
         run: npm ci
@@ -36,27 +37,38 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
-      - name: 6. Compilar la app nativa en Android
+      - name: 6. Obtener versión de Expo
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: 7. Compilar Android
         run: |
           npx expo prebuild
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: 7. Subir el APK como artefacto
+      - name: 8. Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: app-release-v${{ env.VERSION }}
           path: android/app/build/outputs/apk/release/app-release.apk
 
-      - name: 8. Publicar en Release Permanente
+      - name: 9. Crear Release en GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: "Última versión APK"
-          body: "Descarga directa de la última versión compilada."
+          tag_name: v${{ env.VERSION }}
+          name: Liwa v${{ env.VERSION }}
+          body: |
+            ## Compilación automática
+
+            **Versión:** v${{ env.VERSION }}
+
+            **Commit:** ${{ github.sha }}
+
+            APK generado automáticamente mediante GitHub Actions.
           files: android/app/build/outputs/apk/release/app-release.apk
-          make_latest: "true"
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
