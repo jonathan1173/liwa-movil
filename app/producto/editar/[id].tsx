@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 
 const MAX_IMAGES = 4;
+const SLOT_SIZE = 96;
 
 interface Option {
   id: number;
@@ -378,13 +379,12 @@ export default function EditarProductoScreen() {
             <View style={{ width: 42 }} />
           </View>
 
-          {/* Fotos del producto */}
+          {/* Fotos */}
           <View style={[neumorphicStyles.card, styles.section]}>
-            <Text style={[neumorphicStyles.label, { marginBottom: 4 }]}>Fotos del producto</Text>
-            <Text style={styles.subtext}>
-              Toca una casilla vacía o foto para cambiarla, o pulsa la X para eliminarla.
+            <Text style={[neumorphicStyles.label, { marginBottom: 12 }]}>
+              Fotos ({images.filter(Boolean).length}/{MAX_IMAGES})
             </Text>
-            <View style={styles.imagesGrid}>
+            <View style={styles.imageGrid}>
               {images.map((uri, idx) => (
                 <ImageSlot
                   key={idx}
@@ -395,6 +395,9 @@ export default function EditarProductoScreen() {
                 />
               ))}
             </View>
+            <Text style={styles.imageHint}>
+              La primera foto será la portada.
+            </Text>
           </View>
 
           {/* Información */}
@@ -548,68 +551,68 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  section: { marginHorizontal: 0 },
-  subtext: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    marginBottom: 12,
+  section: {
+    marginHorizontal: 0,
   },
-  imagesGrid: {
+  imageGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
+    justifyContent: 'center',
   },
   imageSlot: {
-    width: '47%',
-    aspectRatio: 1,
-    borderRadius: 14,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
+    width: SLOT_SIZE,
+    height: SLOT_SIZE,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
-  },
-  emptySlot: {
-    borderWidth: 1.5,
-    borderColor: Colors.shadowDark,
-    borderStyle: 'dashed',
   },
   slotImage: {
     width: '100%',
     height: '100%',
   },
+  emptySlot: {
+    backgroundColor: Colors.background,
+    borderWidth: 1.5,
+    borderColor: Colors.shadowDark,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
   slotLabel: {
     color: Colors.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    fontWeight: '600',
   },
   orderBadge: {
     position: 'absolute',
     top: 6,
     left: 6,
-    backgroundColor: Colors.accent,
-    borderRadius: 10,
     width: 20,
     height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   orderBadgeText: {
     color: Colors.white,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   removeBtn: {
     position: 'absolute',
     top: 4,
     right: 4,
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 11,
+  },
+  imageHint: {
+    color: Colors.textPlaceholder,
+    fontSize: 11,
+    marginTop: 10,
+    fontStyle: 'italic',
   },
   gap: { height: 14 },
   inputErr: { borderColor: Colors.shadowDark, borderWidth: 1.5 },
