@@ -273,7 +273,7 @@ export default function PublicarScreen() {
         try {
           setUploadProgress(`Subiendo imagen ${i + 1} de ${filledImages.length}…`);
           const publicUrl = await uploadProductImage(filledImages[i], productId, i);
-          await addProductImage(productId, publicUrl, i);
+          await addProductImage(productId, publicUrl);
         } catch (imgErr: any) {
           console.warn(`Image ${i + 1} upload failed:`, imgErr);
           failedImages.push(i + 1);

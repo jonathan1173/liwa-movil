@@ -1,6 +1,7 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getProductById, supabase, updateProductDetails } from '@/lib/supabase';
+import { getProductById, supabase, updateProductDetails, updateProductImages } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -8,6 +9,7 @@ import {
   Alert,
   BackHandler,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -19,6 +21,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+const MAX_IMAGES = 4;
 
 interface Option {
   id: number;
@@ -44,6 +48,39 @@ const STATUS_VALUE_MAP: Record<string, string> = {
   Vendido: 'sold',
   Archivado: 'archived',
 };
+
+// ─── Image Slot Component ───────────────────────────────────────────────────
+function ImageSlot({
+  uri,
+  index,
+  onAdd,
+  onRemove,
+}: {
+  uri: string | null;
+  index: number;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  if (uri) {
+    return (
+      <View style={styles.imageSlot}>
+        <Image source={{ uri }} style={styles.slotImage} resizeMode="cover" />
+        <View style={styles.orderBadge}>
+          <Text style={styles.orderBadgeText}>{index + 1}</Text>
+        </View>
+        <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(index)}>
+          <Ionicons name="close-circle" size={22} color={Colors.accent} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  return (
+    <TouchableOpacity style={[styles.imageSlot, styles.emptySlot]} onPress={onAdd} activeOpacity={0.8}>
+      <Ionicons name="add" size={28} color={Colors.textSecondary} />
+      <Text style={styles.slotLabel}>Foto</Text>
+    </TouchableOpacity>
+  );
+}
 
 // ─── Mini Picker ──────────────────────────────────────────────────────────────
 function PickerField({
@@ -113,6 +150,7 @@ export default function EditarProductoScreen() {
   const [loadingProduct, setLoadingProduct] = useState(true);
 
   // Form fields
+  const [images, setImages] = useState<(string | null)[]>([null, null, null, null]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -127,6 +165,7 @@ export default function EditarProductoScreen() {
 
   // Submission
   const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState('');
   const isSubmitting = useRef(false);
 
   // Validation errors
@@ -161,6 +200,20 @@ export default function EditarProductoScreen() {
         setTitle(product.title);
         setDescription(product.description ?? '');
         setPrice(String(product.price));
+
+        if (product.images && product.images.length > 0) {
+          const uniqueUrls: string[] = [];
+          product.images.forEach((img: any) => {
+            if (img.url && !uniqueUrls.includes(img.url)) {
+              uniqueUrls.push(img.url);
+            }
+          });
+          const loadedImages: (string | null)[] = uniqueUrls.slice(0, MAX_IMAGES);
+          while (loadedImages.length < MAX_IMAGES) loadedImages.push(null);
+          setImages(loadedImages.slice(0, MAX_IMAGES));
+        } else {
+          setImages([null, null, null, null]);
+        }
 
         if (product.category) {
           // Find matching catalog option by name (catalogs may not be loaded yet — we'll re-sync below)
@@ -198,6 +251,36 @@ export default function EditarProductoScreen() {
       return match ?? prev;
     });
   }, [loadingCatalogs, loadingProduct]);
+
+  const pickImage = useCallback(async (slotIndex: number) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para añadir fotos.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setImages((prev) => {
+        const next = [...prev];
+        next[slotIndex] = result.assets[0].uri;
+        return next;
+      });
+    }
+  }, []);
+
+  const removeImage = useCallback((index: number) => {
+    setImages((prev) => {
+      const next = [...prev];
+      next[index] = null;
+      const filled = next.filter(Boolean);
+      while (filled.length < MAX_IMAGES) filled.push(null);
+      return filled as (string | null)[];
+    });
+  }, []);
 
   const handleBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -241,6 +324,7 @@ export default function EditarProductoScreen() {
 
     isSubmitting.current = true;
     setSaving(true);
+    setSaveProgress('Guardando datos…');
     try {
       await updateProductDetails(Number(id), {
         title: title.trim(),
@@ -250,6 +334,10 @@ export default function EditarProductoScreen() {
         condition_id: condition?.id && condition.id !== 0 ? condition.id : null,
         status: STATUS_VALUE_MAP[status.name] ?? 'active',
       });
+
+      setSaveProgress('Actualizando fotos…');
+      await updateProductImages(Number(id), images);
+
       Alert.alert('¡Listo!', 'Publicación actualizada correctamente.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -258,6 +346,7 @@ export default function EditarProductoScreen() {
     } finally {
       isSubmitting.current = false;
       setSaving(false);
+      setSaveProgress('');
     }
   }
 
@@ -287,6 +376,25 @@ export default function EditarProductoScreen() {
             </TouchableOpacity>
             <Text style={neumorphicStyles.title}>Editar publicación</Text>
             <View style={{ width: 42 }} />
+          </View>
+
+          {/* Fotos del producto */}
+          <View style={[neumorphicStyles.card, styles.section]}>
+            <Text style={[neumorphicStyles.label, { marginBottom: 4 }]}>Fotos del producto</Text>
+            <Text style={styles.subtext}>
+              Toca una casilla vacía o foto para cambiarla, o pulsa la X para eliminarla.
+            </Text>
+            <View style={styles.imagesGrid}>
+              {images.map((uri, idx) => (
+                <ImageSlot
+                  key={idx}
+                  uri={uri}
+                  index={idx}
+                  onAdd={() => pickImage(idx)}
+                  onRemove={removeImage}
+                />
+              ))}
+            </View>
           </View>
 
           {/* Información */}
@@ -394,7 +502,9 @@ export default function EditarProductoScreen() {
             {saving ? (
               <View style={styles.btnRow}>
                 <ActivityIndicator color={Colors.white} size="small" />
-                <Text style={[neumorphicStyles.buttonText, { marginLeft: 10 }]}>Guardando…</Text>
+                <Text style={[neumorphicStyles.buttonText, { marginLeft: 10 }]}>
+                  {saveProgress || 'Guardando…'}
+                </Text>
               </View>
             ) : (
               <View style={styles.btnRow}>
@@ -439,6 +549,68 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   section: { marginHorizontal: 0 },
+  subtext: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  imageSlot: {
+    width: '47%',
+    aspectRatio: 1,
+    borderRadius: 14,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.shadowDark,
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  emptySlot: {
+    borderWidth: 1.5,
+    borderColor: Colors.shadowDark,
+    borderStyle: 'dashed',
+  },
+  slotImage: {
+    width: '100%',
+    height: '100%',
+  },
+  slotLabel: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  orderBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: Colors.accent,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  orderBadgeText: {
+    color: Colors.white,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  removeBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+  },
   gap: { height: 14 },
   inputErr: { borderColor: Colors.shadowDark, borderWidth: 1.5 },
   currency: {
@@ -501,3 +673,4 @@ const styles = StyleSheet.create({
   optText: { color: Colors.textSecondary, fontSize: 15 },
   optTextSel: { color: Colors.accent, fontWeight: '700' },
 });
+

@@ -198,8 +198,6 @@ export default function ProductoDetailScreen() {
   }
 
   useEffect(() => {
-    if (id) fetchProduct();
-
     // Get current user and check favorite status
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -219,6 +217,10 @@ export default function ProductoDetailScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (id) {
+        fetchProduct();
+      }
+
       const onBackPress = () => {
         handleBack();
         return true;
@@ -226,7 +228,7 @@ export default function ProductoDetailScreen() {
 
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, [handleBack]),
+    }, [id, handleBack]),
   );
 
   if (loading) return <Skeleton />;

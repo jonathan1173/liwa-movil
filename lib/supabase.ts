@@ -101,7 +101,15 @@ export interface Product {
   created_at: string;
   category: { name: string } | null;
   condition: { name: string } | null;
-  images: { url: string; display_order: number }[];
+  images: { url: string }[];
+}
+
+function formatProductImages(rawImages: any[]): { url: string }[] {
+  const urls: string[] = (rawImages ?? [])
+    .map((img: any) => img.url)
+    .filter((u: any): u is string => typeof u === 'string' && u.length > 0);
+  const uniqueUrls = Array.from(new Set(urls)).slice(0, 4);
+  return uniqueUrls.map((url) => ({ url }));
 }
 
 export async function getProducts(): Promise<Product[]> {
@@ -116,19 +124,16 @@ export async function getProducts(): Promise<Product[]> {
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
-      images:product_image ( url, display_order )
+      images:product_image ( url )
     `)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
-  // Sort images by display_order for each product
   return (data ?? []).map((p: any) => ({
     ...p,
-    images: (p.images ?? []).sort(
-      (a: any, b: any) => a.display_order - b.display_order,
-    ),
+    images: formatProductImages(p.images),
   }));
 }
 
@@ -145,7 +150,7 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
-      images:product_image ( url, display_order )
+      images:product_image ( url )
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -154,9 +159,7 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
 
   return (data ?? []).map((p: any) => ({
     ...p,
-    images: (p.images ?? []).sort(
-      (a: any, b: any) => a.display_order - b.display_order,
-    ),
+    images: formatProductImages(p.images),
   }));
 }
 
@@ -180,7 +183,7 @@ export async function getProductById(id: number): Promise<ProductDetail> {
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
-      images:product_image ( url, display_order ),
+      images:product_image ( url ),
       seller:user_id ( full_name )
     `)
     .eq('id', id)
@@ -196,9 +199,7 @@ export async function getProductById(id: number): Promise<ProductDetail> {
     condition: Array.isArray((data as any).condition)
       ? ((data as any).condition[0] ?? null)
       : (data as any).condition ?? null,
-    images: ((data as any).images ?? []).sort(
-      (a: any, b: any) => a.display_order - b.display_order,
-    ),
+    images: formatProductImages((data as any).images),
     seller: (data as any).seller ?? null,
   } as ProductDetail;
 }
@@ -217,7 +218,7 @@ export interface UpdateProductInput {
 }
 
 export async function updateProductDetails(
-  productId: number,
+  id: number,
   input: UpdateProductInput
 ): Promise<void> {
   const { error } = await supabase
@@ -229,9 +230,8 @@ export async function updateProductDetails(
       category_id: input.category_id,
       condition_id: input.condition_id,
       status: input.status,
-      updated_at: new Date().toISOString(),
     })
-    .eq('id', productId);
+    .eq('id', id);
 
   if (error) throw error;
 }
@@ -295,7 +295,7 @@ export async function uploadProductImage(
   const response = await fetch(imageUri);
   const blob = await response.arrayBuffer();
 
-  // 3. Subir al bucket "PRODUCT"
+  // 3. Subir al bucket "product"
   const { error: uploadError } = await supabase.storage
     .from('product')
     .upload(filePath, blob, {
@@ -315,19 +315,73 @@ export async function uploadProductImage(
 
 export async function addProductImage(
   productId: number,
-  url: string,
-  displayOrder: number
+  url: string
 ) {
   const { error } = await supabase.from('product_image').insert({
     product_id: productId,
     url,
-    display_order: displayOrder,
   });
 
   if (error) throw error;
 }
 
+export async function updateProductImages(
+  productId: number,
+  imageUris: (string | null)[]
+) {
+  // 1. Filtrar URIs no nulas y limitar a máximo 4
+  const filledImages = (imageUris.filter(Boolean) as string[]).slice(0, 4);
+
+  // 2. Subir imágenes locales que son nuevas y conservar URLs existentes
+  const targetUrls: string[] = [];
+  for (let i = 0; i < filledImages.length; i++) {
+    const uri = filledImages[i];
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      targetUrls.push(uri);
+    } else {
+      const publicUrl = await uploadProductImage(uri, productId, i);
+      targetUrls.push(publicUrl);
+    }
+  }
+
+  // 3. Consultar los registros actuales en BD para este producto
+  const { data: existingRows } = await supabase
+    .from('product_image')
+    .select('id, url')
+    .eq('product_id', productId);
+
+  const currentDbRows = existingRows ?? [];
+  const currentDbUrls = currentDbRows.map((r: any) => r.url);
+
+  // 4. Identificar URLs que son verdaderamente nuevas (no están en la BD aún)
+  const urlsToInsert = targetUrls.filter((url) => !currentDbUrls.includes(url));
+
+  // 5. Identificar filas existentes en BD que ya no pertenecen al producto
+  const rowsToDelete = currentDbRows.filter((r: any) => !targetUrls.includes(r.url));
+
+  // 6. Eliminar las filas obsoletas por su ID primario
+  if (rowsToDelete.length > 0) {
+    const idsToDelete = rowsToDelete.map((r: any) => r.id);
+    await supabase.from('product_image').delete().in('id', idsToDelete);
+  }
+
+  // 7. Insertar ÚNICAMENTE las URLs verdaderamente nuevas
+  if (urlsToInsert.length > 0) {
+    const records = urlsToInsert.map((url) => ({
+      product_id: productId,
+      url,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('product_image')
+      .insert(records);
+
+    if (insertError) throw insertError;
+  }
+}
+
 // ─── Favorites helpers ────────────────────────────────────────────────────────
+
 
 export interface FavoriteProduct {
   id: number;
@@ -337,7 +391,7 @@ export interface FavoriteProduct {
   status: string;
   category: { name: string } | null;
   condition: { name: string } | null;
-  images: { url: string; display_order: number }[];
+  images: { url: string }[];
 }
 
 /** Devuelve todos los productos favoritos del usuario autenticado */
@@ -353,7 +407,7 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
         status,
         category:category_id ( name ),
         condition:condition_id ( name ),
-        images:product_image ( url, display_order )
+        images:product_image ( url )
       )
     `)
     .eq('user_id', userId)
