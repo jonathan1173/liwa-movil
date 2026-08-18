@@ -145,6 +145,11 @@ function PickerField({
 }
 
 // ─── Main Edit Screen ─────────────────────────────────────────────────────────
+const BARTER_OPTIONS: Option[] = [
+  { id: 1, name: 'Sí' },
+  { id: 2, name: 'No' },
+];
+
 export default function EditarProductoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -155,6 +160,7 @@ export default function EditarProductoScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [barterOption, setBarterOption] = useState<Option>(BARTER_OPTIONS[0]);
   const [category, setCategory] = useState<Option | null>(null);
   const [condition, setCondition] = useState<Option | null>(null);
   const [status, setStatus] = useState<Option>(STATUS_OPTIONS[0]);
@@ -201,6 +207,7 @@ export default function EditarProductoScreen() {
         setTitle(product.title);
         setDescription(product.description ?? '');
         setPrice(String(product.price));
+        setBarterOption(product.barter ? BARTER_OPTIONS[0] : BARTER_OPTIONS[1]);
 
         if (product.images && product.images.length > 0) {
           const uniqueUrls: string[] = [];
@@ -331,6 +338,7 @@ export default function EditarProductoScreen() {
         title: title.trim(),
         description: description.trim(),
         price: parseFloat(price.replace(',', '.')),
+        barter: barterOption.name === 'Sí',
         category_id: category?.id && category.id !== 0 ? category.id : null,
         condition_id: condition?.id && condition.id !== 0 ? condition.id : null,
         status: STATUS_VALUE_MAP[status.name] ?? 'active',
@@ -454,9 +462,9 @@ export default function EditarProductoScreen() {
             </View>
           </View>
 
-          {/* Categorización */}
+          {/* Categorización y Opciones */}
           <View style={[neumorphicStyles.card, styles.section]}>
-            <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>Categorización</Text>
+            <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>Categorización y Opciones</Text>
 
             {loadingCatalogs ? (
               <ActivityIndicator color={Colors.accent} style={{ marginVertical: 12 }} />
@@ -479,13 +487,26 @@ export default function EditarProductoScreen() {
                   placeholder="Nuevo, Usado, etc."
                   icon="layers-outline"
                 />
+
               </>
             )}
           </View>
 
+
           {/* Estado */}
           <View style={[neumorphicStyles.card, styles.section]}>
             <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>Estado de la publicación</Text>
+
+            <PickerField
+              label="¿Acepta trueque?"
+              value={barterOption}
+              options={BARTER_OPTIONS}
+              onSelect={setBarterOption}
+              placeholder="Selecciona..."
+              icon="swap-horizontal-outline"
+            />
+            <View style={styles.gap} />
+
             <PickerField
               label="Estado"
               value={status}

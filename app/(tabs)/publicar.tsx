@@ -132,11 +132,17 @@ function ImageSlot({
 }
 
 // ─── Main Publicar Screen ────────────────────────────────────────────────────
+const BARTER_OPTIONS: Option[] = [
+  { id: 1, name: 'Sí' },
+  { id: 2, name: 'No' },
+];
+
 export default function PublicarScreen() {
   const [images, setImages] = useState<(string | null)[]>([null, null, null, null]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [barterOption, setBarterOption] = useState<Option>(BARTER_OPTIONS[0]); // Por defecto 'Sí' (true)
   const [category, setCategory] = useState<Option | null>(null);
   const [condition, setCondition] = useState<Option | null>(null);
 
@@ -166,6 +172,7 @@ export default function PublicarScreen() {
       setTitle('');
       setDescription('');
       setPrice('');
+      setBarterOption(BARTER_OPTIONS[0]);
       setCategory(null);
       setCondition(null);
       setTitleError('');
@@ -263,6 +270,7 @@ export default function PublicarScreen() {
         title: title.trim(),
         description: description.trim(),
         price: parseFloat(price.replace(',', '.')),
+        barter: barterOption.name === 'Sí',
         category_id: category?.id ?? null,
         condition_id: condition?.id ?? null,
       });
@@ -401,10 +409,10 @@ export default function PublicarScreen() {
             </View>
           </View>
 
-          {/* Categorización */}
+          {/* Categorización y Opciones */}
           <View style={[neumorphicStyles.card, styles.section]}>
             <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>
-              Categorización
+              Categorización y Opciones
             </Text>
 
             {loadingCatalogs ? (
@@ -427,6 +435,15 @@ export default function PublicarScreen() {
                   onSelect={setCondition}
                   placeholder="Nuevo, Usado, etc."
                   icon="layers-outline"
+                />
+                <View style={styles.gap} />
+                <PickerField
+                  label="¿Acepta trueque?"
+                  value={barterOption}
+                  options={BARTER_OPTIONS}
+                  onSelect={setBarterOption}
+                  placeholder="Selecciona..."
+                  icon="swap-horizontal-outline"
                 />
               </>
             )}

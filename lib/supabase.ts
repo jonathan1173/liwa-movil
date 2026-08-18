@@ -97,7 +97,8 @@ export interface Product {
   title: string;
   description: string | null;
   price: number;
-  status: string;
+  barter: boolean;
+  status?: string;
   created_at: string;
   category: { name: string } | null;
   condition: { name: string } | null;
@@ -120,24 +121,52 @@ export async function getProducts(): Promise<Product[]> {
       title,
       description,
       price,
-      status,
+      barter,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
       images:product_image ( url )
     `)
-    .eq('status', 'active')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
   return (data ?? []).map((p: any) => ({
     ...p,
+    status: 'active',
+    barter: p.barter ?? true,
     images: formatProductImages(p.images),
   }));
 }
 
-/** Devuelve todas las publicaciones del propio usuario (todos los estados) */
+export async function getBarterProducts(): Promise<Product[]> {
+  const { data, error } = await supabase
+    .from('product')
+    .select(`
+      id,
+      title,
+      description,
+      price,
+      barter,
+      created_at,
+      category:category_id ( name ),
+      condition:condition_id ( name ),
+      images:product_image ( url )
+    `)
+    .eq('barter', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    status: 'active',
+    barter: true,
+    images: formatProductImages(p.images),
+  }));
+}
+
+/** Devuelve todas las publicaciones del propio usuario */
 export async function getMyProducts(userId: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from('product')
@@ -146,7 +175,7 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
       title,
       description,
       price,
-      status,
+      barter,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
@@ -159,6 +188,8 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
 
   return (data ?? []).map((p: any) => ({
     ...p,
+    status: 'active',
+    barter: p.barter ?? true,
     images: formatProductImages(p.images),
   }));
 }
@@ -179,7 +210,7 @@ export async function getProductById(id: number): Promise<ProductDetail> {
       title,
       description,
       price,
-      status,
+      barter,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
@@ -193,6 +224,8 @@ export async function getProductById(id: number): Promise<ProductDetail> {
 
   return {
     ...data,
+    status: 'active',
+    barter: (data as any).barter ?? true,
     category: Array.isArray((data as any).category)
       ? ((data as any).category[0] ?? null)
       : (data as any).category ?? null,
@@ -212,9 +245,10 @@ export interface UpdateProductInput {
   title: string;
   description: string;
   price: number;
+  barter?: boolean;
   category_id: number | null;
   condition_id: number | null;
-  status: string;
+  status?: string;
 }
 
 export async function updateProductDetails(
@@ -227,9 +261,9 @@ export async function updateProductDetails(
       title: input.title,
       description: input.description,
       price: input.price,
+      barter: input.barter ?? true,
       category_id: input.category_id,
       condition_id: input.condition_id,
-      status: input.status,
     })
     .eq('id', id);
 
@@ -254,6 +288,7 @@ export interface CreateProductInput {
   title: string;
   description: string;
   price: number;
+  barter?: boolean;
   category_id: number | null;
   condition_id: number | null;
 }
@@ -271,9 +306,9 @@ export async function createProduct(input: CreateProductInput): Promise<number> 
       title: input.title,
       description: input.description,
       price: input.price,
+      barter: input.barter ?? true,
       category_id: input.category_id,
       condition_id: input.condition_id,
-      status: 'active',
     })
     .select('id')
     .single();
@@ -404,7 +439,6 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
         id,
         title,
         price,
-        status,
         category:category_id ( name ),
         condition:condition_id ( name ),
         images:product_image ( url )
@@ -420,7 +454,7 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
     id: row.product.id,
     title: row.product.title,
     price: row.product.price,
-    status: row.product.status,
+    status: 'active',
     category: Array.isArray(row.product.category)
       ? (row.product.category[0] ?? null)
       : row.product.category ?? null,
