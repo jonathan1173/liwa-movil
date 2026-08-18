@@ -1,5 +1,5 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getBarterProducts, Product } from '@/lib/supabase';
+import { getBarterProducts, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';

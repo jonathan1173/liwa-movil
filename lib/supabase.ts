@@ -136,7 +136,7 @@ export async function getProducts(): Promise<Product[]> {
     throw error;
   }
 
-  console.log('--- SUPABASE getProducts RETURNED ROWS:', data?.length, data);
+  // console.log('--- SUPABASE getProducts RETURNED ROWS:', data?.length, data);
 
   return (data ?? []).map((p: any) => ({
     ...p,

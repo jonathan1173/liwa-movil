@@ -1,5 +1,5 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getProducts, Product } from '@/lib/supabase';
+import { getProducts, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -95,9 +95,7 @@ export default function InicioScreen() {
         // silent
       }
       
-      console.log('--- INICIO: User ID actual:', currentUserId);
-      console.log('--- INICIO: Todos los productos obtenidos de BD:', data);
-
+ 
       setProducts(data);
     } catch (err: any) {
       console.warn('Error fetching products:', err);

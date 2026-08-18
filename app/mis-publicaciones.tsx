@@ -25,8 +25,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   archived: { label: 'Archivado', color: Colors.textSecondary, bg: 'rgba(0,0,0,0.06)' },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.archived;
+function StatusBadge({ status }: { status?: string }) {
+  const cfg = STATUS_CONFIG[status ?? ''] ?? STATUS_CONFIG.archived;
   return (
     <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
       <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
@@ -113,10 +113,10 @@ function EmptyState() {
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 
 function StatsBar({ products }: { products: Product[] }) {
-  const counts = products.reduce<Record<string, number>>(
-    (acc, p) => ({ ...acc, [p.status]: (acc[p.status] ?? 0) + 1 }),
-    {}
-  );
+  const counts = products.reduce<Record<string, number>>((acc, p) => {
+    const key = p.status ?? 'active';
+    return { ...acc, [key]: (acc[key] ?? 0) + 1 };
+  }, {});
   const stats = [
     { key: 'active',   label: 'Activos',    icon: 'checkmark-circle-outline' as const },
     { key: 'reserved', label: 'apartado', icon: 'time-outline' as const },

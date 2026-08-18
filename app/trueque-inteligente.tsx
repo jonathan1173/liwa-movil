@@ -265,7 +265,7 @@ export default function TruequeInteligenteScreen() {
                 <Text style={styles.warningText}>
                   {isReadOnlyProposal
                     ? `Faltan $${difference.toFixed(2)} para igualar el valor de tu producto`
-                    : `Agrega artículos por $${difference.toFixed(2)} más para igualar el valor`}
+                    : `Agrega artículos para igualar el valor`}
                 </Text>
               </View>
             ) : (
@@ -432,7 +432,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   loQueBuscasLabel: {
-    color: '#d63031',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -453,12 +452,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   targetValueLabel: {
-    color: '#27ae60',
     fontSize: 11,
     fontWeight: '600',
   },
   targetValueAmount: {
-    color: '#27ae60',
     fontSize: 20,
     fontWeight: '900',
   },
@@ -466,7 +463,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -476,7 +472,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   offerSectionTitle: {
-    color: '#d63031',
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 14,
@@ -492,11 +487,9 @@ const styles = StyleSheet.create({
     height: 110,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#e88a99',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fef5f7',
     gap: 6,
   },
   plusCircle: {
@@ -574,7 +567,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   warningText: {
-    color: '#c0392b',
+    // color: '#c0392b',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -601,8 +594,8 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
+  
   },
   modalContainer: {
     backgroundColor: Colors.background,
@@ -610,6 +603,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: 20,
     maxHeight: '80%',
+    borderTopWidth: 2,
+    borderColor: '#000',
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+   
   },
   modalHeader: {
     flexDirection: 'row',
