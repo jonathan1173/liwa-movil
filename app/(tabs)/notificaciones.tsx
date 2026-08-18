@@ -104,26 +104,16 @@ export default function NotificacionesScreen() {
               {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
-
-          {!item.is_read && <View style={styles.unreadDot} />}
+          
+          {/* {!item.is_read && <View style={styles.unreadDot} />} */} 
         </View>
 
-        {/* Bottom Box: Fotos miniatura e ícono de intercambio + Botón Revisar oferta */}
+        {/* Bottom Box: Ícono de trueque + Botón Revisar oferta */}
         <View style={styles.offerPreviewBox}>
           <View style={styles.miniImagesRow}>
-            {targetImg ? (
-              <Image source={{ uri: targetImg }} style={styles.miniImg} resizeMode="cover" />
-            ) : (
-              <View style={[styles.miniImg, styles.imgPlaceholder]} />
-            )}
-
-            <Ionicons name="swap-horizontal" size={16} color={Colors.textSecondary} style={{ marginHorizontal: 4 }} />
-
-            {firstOfferedImg ? (
-              <Image source={{ uri: firstOfferedImg }} style={styles.miniImg} resizeMode="cover" />
-            ) : (
-              <View style={[styles.miniImg, styles.imgPlaceholder]} />
-            )}
+            <View style={styles.barterIconContainer}>
+              <Ionicons name="swap-horizontal" size={20} color={Colors.accent} />
+            </View>
           </View>
 
           <TouchableOpacity
@@ -187,7 +177,6 @@ const styles = StyleSheet.create({
     paddingTop: 28,
   },
   pageTitle: {
-    color: '#d63031',
     fontSize: 22,
     fontWeight: '800',
     marginBottom: 20,
@@ -263,14 +252,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  miniImg: {
+  barterIconContainer: {
     width: 36,
     height: 36,
-    borderRadius: 8,
-    backgroundColor: Colors.background,
-  },
-  imgPlaceholder: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 10,
+    backgroundColor: 'rgba(214, 48, 49, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   reviewBtn: {
     flexDirection: 'row',

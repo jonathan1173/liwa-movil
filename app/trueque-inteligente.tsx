@@ -1,5 +1,5 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getBarterProposalById, getMyProducts, getProductById, Product, sendBarterProposal, supabase } from '@/lib/supabase';
+import { getBarterProposalById, getMyProducts, getProductById, Product, sendBarterProposal, supabase, updateBarterProposalStatus } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -24,6 +24,7 @@ export default function TruequeInteligenteScreen() {
   const [targetProduct, setTargetProduct] = useState<any>(null);
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [selectedOfferProducts, setSelectedOfferProducts] = useState<Product[]>([]);
+  const [proposalData, setProposalData] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -45,10 +46,11 @@ export default function TruequeInteligenteScreen() {
       if (proposal_id) {
         // Cargar propuesta existente (ej: vista del vendedor desde notificaciones)
         setIsReadOnlyProposal(true);
-        const proposalData = await getBarterProposalById(Number(proposal_id));
-        setTargetProduct(proposalData.target_product);
+        const data = await getBarterProposalById(Number(proposal_id));
+        setProposalData(data);
+        setTargetProduct(data.target_product);
 
-        const offeredProds: Product[] = (proposalData.offered_items ?? [])
+        const offeredProds: Product[] = (data.offered_items ?? [])
           .map((item: any) => item.product)
           .filter(Boolean);
 
@@ -132,6 +134,39 @@ export default function TruequeInteligenteScreen() {
     }
   }
 
+  const handleAcceptProposal = async () => {
+    if (!proposal_id) return;
+    setSubmitting(true);
+    try {
+      await updateBarterProposalStatus(Number(proposal_id), 'accepted');
+      Alert.alert('¡Trueque Aceptado!', 'Has aceptado la oferta de trueque.', [
+        { text: 'Aceptar', onPress: () => router.replace('/(tabs)/notificaciones' as any) },
+      ]);
+    } catch (err: any) {
+      Alert.alert('Error', err.message ?? 'No se pudo aceptar la oferta');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectProposal = async () => {
+    if (!proposal_id) return;
+    setSubmitting(true);
+    try {
+      await updateBarterProposalStatus(Number(proposal_id), 'rejected');
+      Alert.alert('Oferta Rechazada', 'Has rechazado la propuesta de trueque.', [
+        { text: 'Aceptar', onPress: () => router.replace('/(tabs)/notificaciones' as any) },
+      ]);
+    } catch (err: any) {
+      Alert.alert('Error', err.message ?? 'No se pudo rechazar la oferta');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const firstTargetImage = targetProduct?.images?.[0]?.url ?? null;
+  const senderName = proposalData?.sender?.full_name ?? 'Comprador';
+
   if (loading) {
     return (
       <SafeAreaView style={[neumorphicStyles.screen, styles.centered]}>
@@ -140,8 +175,151 @@ export default function TruequeInteligenteScreen() {
     );
   }
 
-  const firstTargetImage = targetProduct?.images?.[0]?.url ?? null;
+  // ─── Vista 1: Modo Vendedor (Revisar Oferta de Trueque Recibida) ──────────────
+  if (isReadOnlyProposal) {
+    const diffVal = totalOfferValue - targetValue;
+    return (
+      <SafeAreaView style={neumorphicStyles.screen}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backCircle} onPress={handleBack} activeOpacity={0.85}>
+              <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Detalle del Trueque</Text>
+            <View style={{ width: 42 }} />
+          </View>
 
+          {/* Tu Producto (Tarjeta principal) */}
+          <Text style={styles.sellerSectionLabel}>Tu Producto</Text>
+          <View style={[neumorphicStyles.card, styles.sellerProductCard]}>
+            <View style={styles.sellerImageContainer}>
+              {firstTargetImage ? (
+                <Image source={{ uri: firstTargetImage }} style={styles.sellerMainImg} resizeMode="cover" />
+              ) : (
+                <View style={[styles.sellerMainImg, styles.imgPlaceholder]}>
+                  <Ionicons name="image-outline" size={40} color={Colors.textSecondary} />
+                </View>
+              )}
+            </View>
+            <View style={styles.sellerProductInfo}>
+              <Text style={styles.sellerProductTitle}>{targetProduct?.title}</Text>
+              <Text style={styles.sellerProductCondition}>
+                Estado: {targetProduct?.condition?.name ?? 'Usado'}
+              </Text>
+              <View style={styles.sellerPriceRow}>
+                <Text style={styles.sellerPriceLabel}>VALOR ESTIMADO</Text>
+                <Text style={styles.sellerPriceValue}>
+                  ${targetValue.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Ícono de Intercambio Central */}
+          <View style={styles.swapDivider}>
+            <Ionicons name="swap-vertical" size={26} color={Colors.textSecondary} />
+          </View>
+
+          {/* Oferta de [Nombre Emisor] */}
+          <Text style={styles.sellerSectionLabel}>
+            Oferta de <Text style={{ color: '#8e44ad' }}>{senderName}</Text>
+          </Text>
+
+          <View style={styles.offeredList}>
+            {selectedOfferProducts.map((prod) => {
+              const pImg = prod.images?.[0]?.url;
+              return (
+                <View key={prod.id} style={[neumorphicStyles.card, styles.offeredCardItem]}>
+                  {pImg ? (
+                    <Image source={{ uri: pImg }} style={styles.offeredItemImg} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.offeredItemImg, styles.imgPlaceholder]}>
+                      <Ionicons name="cube-outline" size={24} color={Colors.textSecondary} />
+                    </View>
+                  )}
+                  <View style={styles.offeredItemInfo}>
+                    <Text style={styles.offeredItemTitle} numberOfLines={1}>
+                      {prod.title}
+                    </Text>
+                    <Text style={styles.offeredItemCondition}>
+                      {prod.condition?.name ?? 'Usado'}
+                    </Text>
+                    <Text style={styles.offeredItemPrice}>
+                      Valor: ${Number(prod.price).toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Resumen de Equivalencia (Caja Verde) */}
+          <View style={styles.sellerSummaryBox}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Valor de tu Producto</Text>
+              <Text style={styles.summaryValue}>${targetValue.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Valor Total Ofrecido</Text>
+              <Text style={[styles.summaryValue, { color: '#27ae60', fontWeight: '800' }]}>
+                ${totalOfferValue.toFixed(2)}
+              </Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Diferencia</Text>
+              <View style={[styles.diffBadge, { backgroundColor: diffVal >= 0 ? '#d4efdf' : '#fadbd8' }]}>
+                <Text style={[styles.diffBadgeText, { color: diffVal >= 0 ? '#27ae60' : '#c0392b' }]}>
+                  {diffVal >= 0
+                    ? `+ $${diffVal.toFixed(2)} a tu favor`
+                    : `- $${Math.abs(diffVal).toFixed(2)} de diferencia`}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Botones de Acción para el Vendedor */}
+          {proposalData?.status === 'pending' ? (
+            <View style={styles.actionButtonsCol}>
+              <TouchableOpacity
+                style={styles.acceptBtn}
+                onPress={handleAcceptProposal}
+                disabled={submitting}
+                activeOpacity={0.85}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="hand-left-outline" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+                    <Text style={styles.acceptBtnText}>Aceptar Trueque</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.rejectBtn}
+                onPress={handleRejectProposal}
+                disabled={submitting}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.rejectBtnText}>Rechazar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={[styles.statusBanner, { backgroundColor: proposalData?.status === 'accepted' ? '#d4efdf' : '#fadbd8' }]}>
+              <Text style={[styles.statusBannerText, { color: proposalData?.status === 'accepted' ? '#27ae60' : '#c0392b' }]}>
+                Propuesta {proposalData?.status === 'accepted' ? 'Aceptada' : 'Rechazada'}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Vista 2: Modo Comprador (Enviar Oferta de Trueque) ──────────────────────
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -187,9 +365,7 @@ export default function TruequeInteligenteScreen() {
 
         {/* Card: MI OFERTA */}
         <View style={[neumorphicStyles.card, styles.offerCard]}>
-          <Text style={styles.offerSectionTitle}>
-            {isReadOnlyProposal ? 'Oferta Recibida' : 'Mi Oferta'}
-          </Text>
+          <Text style={styles.offerSectionTitle}>Mi Oferta</Text>
 
           {/* Grid 2x2 para seleccionar/mostrar items */}
           <View style={styles.gridContainer}>
@@ -212,22 +388,12 @@ export default function TruequeInteligenteScreen() {
                     <Text style={styles.slotPrice}>
                       ${Number(item.price).toFixed(2)}
                     </Text>
-                    {!isReadOnlyProposal && (
-                      <TouchableOpacity
-                        style={styles.removeSlotBtn}
-                        onPress={() => toggleSelectProduct(item)}
-                      >
-                        <Ionicons name="close-circle" size={20} color={Colors.accent} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              }
-
-              if (isReadOnlyProposal) {
-                return (
-                  <View key={index} style={[styles.gridSlotEmpty, { opacity: 0.4 }]}>
-                    <Text style={styles.agregarText}>Sin artículo</Text>
+                    <TouchableOpacity
+                      style={styles.removeSlotBtn}
+                      onPress={() => toggleSelectProduct(item)}
+                    >
+                      <Ionicons name="close-circle" size={20} color={Colors.accent} />
+                    </TouchableOpacity>
                   </View>
                 );
               }
@@ -251,9 +417,7 @@ export default function TruequeInteligenteScreen() {
           {/* Recaudado / Cálculo de equivalencia */}
           <View style={styles.totalBox}>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>
-                {isReadOnlyProposal ? 'Valor total ofrecido:' : 'Valor total de tu oferta:'}
-              </Text>
+              <Text style={styles.totalLabel}>Valor total de tu oferta:</Text>
               <Text style={styles.totalAmount}>
                 ${totalOfferValue.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
               </Text>
@@ -262,47 +426,37 @@ export default function TruequeInteligenteScreen() {
             {difference > 0 ? (
               <View style={styles.warningRow}>
                 <Ionicons name="information-circle-outline" size={16} color="#c0392b" />
-                <Text style={styles.warningText}>
-                  {isReadOnlyProposal
-                    ? `Faltan $${difference.toFixed(2)} para igualar el valor de tu producto`
-                    : `Agrega artículos para igualar el valor`}
-                </Text>
+                <Text style={styles.warningText}>Agrega artículos para igualar el valor</Text>
               </View>
             ) : (
               <View style={styles.successRow}>
                 <Ionicons name="checkmark-circle-outline" size={16} color="#27ae60" />
-                <Text style={styles.successText}>
-                  {isReadOnlyProposal
-                    ? 'La oferta iguala o supera el valor de tu producto'
-                    : '¡Tu oferta iguala o supera el valor requerido!'}
-                </Text>
+                <Text style={styles.successText}>¡Tu oferta iguala o supera el valor requerido!</Text>
               </View>
             )}
           </View>
         </View>
 
-        {/* Botón Mandar oferta de trueque (Oculto en modo lectura) */}
-        {!isReadOnlyProposal && (
-          <TouchableOpacity
-            style={[
-              neumorphicStyles.button,
-              styles.submitBtn,
-              (selectedOfferProducts.length === 0 || submitting) && styles.disabledBtn,
-            ]}
-            onPress={handleSendProposal}
-            disabled={selectedOfferProducts.length === 0 || submitting}
-            activeOpacity={0.85}
-          >
-            {submitting ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <View style={styles.submitBtnRow}>
-                <Ionicons name="swap-horizontal" size={20} color={Colors.white} style={{ marginRight: 8 }} />
-                <Text style={neumorphicStyles.buttonText}>Mandar oferta de trueque</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
+        {/* Botón Mandar oferta de trueque */}
+        <TouchableOpacity
+          style={[
+            neumorphicStyles.button,
+            styles.submitBtn,
+            (selectedOfferProducts.length === 0 || submitting) && styles.disabledBtn,
+          ]}
+          onPress={handleSendProposal}
+          disabled={selectedOfferProducts.length === 0 || submitting}
+          activeOpacity={0.85}
+        >
+          {submitting ? (
+            <ActivityIndicator color={Colors.white} />
+          ) : (
+            <View style={styles.submitBtnRow}>
+              <Ionicons name="swap-horizontal" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+              <Text style={neumorphicStyles.buttonText}>Mandar oferta de trueque</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Modal para elegir mis productos */}
@@ -657,5 +811,178 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.accent,
     marginTop: 2,
+  },
+  // ─── Estilos Vendedor ───────────────────────────────────────────────────────
+  sellerSectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  sellerProductCard: {
+    marginHorizontal: 0,
+    padding: 0,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  sellerImageContainer: {
+    width: '100%',
+    height: 180,
+    backgroundColor: Colors.background,
+  },
+  sellerMainImg: {
+    width: '100%',
+    height: '100%',
+  },
+  sellerProductInfo: {
+    padding: 16,
+  },
+  sellerProductTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  sellerProductCondition: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+  },
+  sellerPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+  },
+  sellerPriceLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+  },
+  sellerPriceValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#d63031',
+  },
+  swapDivider: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  offeredList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  offeredCardItem: {
+    marginHorizontal: 0,
+    padding: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  offeredItemImg: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+  },
+  offeredItemInfo: {
+    flex: 1,
+  },
+  offeredItemTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  offeredItemCondition: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginVertical: 2,
+  },
+  offeredItemPrice: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#27ae60',
+  },
+  sellerSummaryBox: {
+    backgroundColor: '#e8f8f5',
+    borderRadius: 18,
+    padding: 16,
+    gap: 10,
+    marginBottom: 20,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  summaryValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: 'rgba(39, 174, 96, 0.2)',
+    marginVertical: 4,
+  },
+  diffBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  diffBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  actionButtonsCol: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  acceptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1b8a43',
+    borderRadius: 16,
+    paddingVertical: 16,
+  },
+  acceptBtnText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  rejectBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fceae8',
+    borderRadius: 16,
+    paddingVertical: 14,
+  },
+  rejectBtnText: {
+    color: '#d63031',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  statusBanner: {
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  statusBannerText: {
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

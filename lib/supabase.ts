@@ -574,39 +574,68 @@ export interface NotificationItem {
 }
 
 export async function getNotifications(userId: string): Promise<NotificationItem[]> {
-  const { data, error } = await supabase
+  // 1. Obtener notificaciones tradicionales
+  const { data: notificationsData, error: notifError } = await supabase
     .from('notification')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (notifError) throw notifError;
 
-  // Para enriquecer notificaciones con propuestas recibidas:
-  const { data: proposals } = await supabase
+  // 2. Obtener propuestas de trueque recibidas
+  const { data: proposals, error: propError } = await supabase
     .from('barter_proposal')
     .select(`
       id,
+      created_at,
+      status,
       sender:sender_user_id ( full_name, photo_url ),
       target_product:target_product_id ( id, title, price, images:product_image ( url ) ),
       offered_items:barter_proposal_item (
         product:product_id ( id, title, price, images:product_image ( url ) )
       )
     `)
-    .eq('receiver_user_id', userId);
+    .eq('receiver_user_id', userId)
+    .order('created_at', { ascending: false });
 
-  const proposalMap = new Map((proposals ?? []).map((p: any) => [p.id, p]));
+  if (propError) console.warn('Error fetching barter proposals:', propError);
 
-  return (data ?? []).map((n: any, idx: number) => {
-    // Vincular la propuesta correspondiente si aplica
-    const matchingProposal = (proposals ?? [])[idx] ?? null;
-    return {
-      ...n,
-      proposal_id: matchingProposal?.id,
-      sender: matchingProposal?.sender ?? null,
-      proposal: matchingProposal ?? null,
-    };
+  console.log('=== DEBUG: User ID ===', userId);
+  console.log('=== DEBUG: Notifications Table Rows ===', notificationsData);
+  console.log('=== DEBUG: Barter Proposals Table Rows ===', proposals);
+
+  const items: NotificationItem[] = [];
+
+  // Convertir propuestas recibidas en items de notificación si no están en la tabla notification
+  (proposals ?? []).forEach((prop: any) => {
+    const senderName = prop.sender?.full_name ?? 'Alguien';
+    const targetTitle = prop.target_product?.title ?? 'tu producto';
+    items.push({
+      id: prop.id, // ID virtual usando el id de la propuesta
+      user_id: userId,
+      title: 'Nueva propuesta de trueque',
+      message: `${senderName} te ha ofrecido un trueque por tu "${targetTitle}".`,
+      is_read: false,
+      created_at: prop.created_at,
+      proposal_id: prop.id,
+      sender: prop.sender,
+      proposal: prop,
+    });
   });
+
+  // Agregar notificaciones generales si no son duplicadas
+  (notificationsData ?? []).forEach((n: any) => {
+    if (!items.some((item) => item.proposal_id === n.id)) {
+      items.push(n);
+    }
+  });
+
+  // Ordenar por fecha descendente
+  items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  console.log('=== DEBUG: Final Combined Notifications List ===', items);
+  return items;
 }
 
 export async function getBarterProposalById(proposalId: number) {
@@ -630,6 +659,15 @@ export async function getBarterProposalById(proposalId: number) {
 
   if (error) throw error;
   return data;
+}
+
+export async function updateBarterProposalStatus(proposalId: number, status: 'accepted' | 'rejected') {
+  const { error } = await supabase
+    .from('barter_proposal')
+    .update({ status })
+    .eq('id', proposalId);
+
+  if (error) throw error;
 }
 
 export async function markNotificationRead(notificationId: number): Promise<void> {
