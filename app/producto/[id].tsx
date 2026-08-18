@@ -290,18 +290,33 @@ export default function ProductoDetailScreen() {
 
      
 
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={toggleFavorite}
-          activeOpacity={0.85}
-          disabled={favLoading}
-        >
-          <Ionicons
-            name={favorited ? 'heart' : 'heart-outline'}
-            size={22}
-            color={favorited ? '#e05c5c' : Colors.textPrimary}
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {/* Botón de Trueque (a la izquierda de favoritos) */}
+
+          {product?.barter && !isOwner &&  (
+            <TouchableOpacity
+              style={styles.headerBtn}
+              onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="swap-horizontal"   size={22} color={Colors.accent} />
+            </TouchableOpacity>
+          )}
+
+          {/* Botón de Favorito (corazón) */}
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={toggleFavorite}
+            activeOpacity={0.85}
+            disabled={favLoading}
+          >
+            <Ionicons
+              name={favorited ? 'heart' : 'heart-outline'}
+              size={22}
+              color={favorited ? '#e05c5c' : Colors.textPrimary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -391,18 +406,36 @@ export default function ProductoDetailScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity
-              style={[neumorphicStyles.button, styles.contactBtn]}
-              activeOpacity={0.85}
-            >
-              <Ionicons
-                name="chatbubble-ellipses-outline"
-                size={20}
-                color={Colors.white}
-                style={{ marginRight: 8 }}
-              />
-              <Text style={neumorphicStyles.buttonText}>Contactar vendedor</Text>
-            </TouchableOpacity>
+            <View style={{ gap: 10, marginTop: 4 }}>
+              {product?.barter && (
+                <TouchableOpacity
+                  style={[neumorphicStyles.button, { backgroundColor: '#8e44ad' }]}
+                  activeOpacity={0.85}
+                  onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
+                >
+                  <Ionicons
+                    name="swap-horizontal"
+                    size={20}
+                    color={Colors.white}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={neumorphicStyles.buttonText}>Ofrecer Trueque</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[neumorphicStyles.button, styles.contactBtn]}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={20}
+                  color={Colors.white}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={neumorphicStyles.buttonText}>Contactar vendedor</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </ScrollView>

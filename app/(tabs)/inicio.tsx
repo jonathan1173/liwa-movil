@@ -87,8 +87,20 @@ export default function InicioScreen() {
     setError(false);
     try {
       const data = await getProducts();
+      let currentUserId: string | null = null;
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        currentUserId = userData?.user?.id ?? null;
+      } catch {
+        // silent
+      }
+      
+      console.log('--- INICIO: User ID actual:', currentUserId);
+      console.log('--- INICIO: Todos los productos obtenidos de BD:', data);
+
       setProducts(data);
-    } catch {
+    } catch (err: any) {
+      console.warn('Error fetching products:', err);
       setError(true);
     } finally {
       setLoading(false);

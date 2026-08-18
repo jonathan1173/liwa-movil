@@ -69,7 +69,8 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* ── Trueque (Izquierda de Inicio) ── */}
+
+      {/* ── Trueque ── */}
       <Tabs.Screen
         name="trueque"
         options={{
@@ -80,8 +81,6 @@ export default function TabLayout() {
         }}
       />
 
-
-
       {/* ── Publicar (centro) ── */}
       <Tabs.Screen
         name="publicar"
@@ -90,6 +89,17 @@ export default function TabLayout() {
           tabBarIcon: () => <PublishTabIcon />,
           tabBarLabel: () => null,
           tabBarStyle: { display: 'none' },
+        }}
+      />
+
+      {/* ── Notificaciones ── */}
+      <Tabs.Screen
+        name="notificaciones"
+        options={{
+          title: 'Notificaciones',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} />
+          ),
         }}
       />
 

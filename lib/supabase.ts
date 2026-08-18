@@ -94,6 +94,7 @@ export async function getEthnicities() {
 
 export interface Product {
   id: number;
+  user_id?: string;
   title: string;
   description: string | null;
   price: number;
@@ -118,6 +119,7 @@ export async function getProducts(): Promise<Product[]> {
     .from('product')
     .select(`
       id,
+      user_id,
       title,
       description,
       price,
@@ -129,7 +131,12 @@ export async function getProducts(): Promise<Product[]> {
     `)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error Supabase getProducts:', error);
+    throw error;
+  }
+
+  console.log('--- SUPABASE getProducts RETURNED ROWS:', data?.length, data);
 
   return (data ?? []).map((p: any) => ({
     ...p,
@@ -144,6 +151,7 @@ export async function getBarterProducts(): Promise<Product[]> {
     .from('product')
     .select(`
       id,
+      user_id,
       title,
       description,
       price,
@@ -156,7 +164,12 @@ export async function getBarterProducts(): Promise<Product[]> {
     .eq('barter', true)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error Supabase getBarterProducts:', error);
+    throw error;
+  }
+
+  console.log('--- SUPABASE getBarterProducts RETURNED ROWS:', data?.length, data);
 
   return (data ?? []).map((p: any) => ({
     ...p,
@@ -172,6 +185,7 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
     .from('product')
     .select(`
       id,
+      user_id,
       title,
       description,
       price,
@@ -496,6 +510,135 @@ export async function removeFavorite(userId: string, productId: number): Promise
     .delete()
     .eq('user_id', userId)
     .eq('product_id', productId);
+
+  if (error) throw error;
+}
+
+// ─── Barter Proposal & Notifications Helpers ─────────────────────────────────
+
+export interface SendProposalInput {
+  sender_user_id: string;
+  receiver_user_id: string;
+  target_product_id: number;
+  offered_product_ids: number[];
+}
+
+export async function sendBarterProposal(input: SendProposalInput): Promise<number> {
+  // 1. Crear propuesta
+  const { data: proposal, error: proposalError } = await supabase
+    .from('barter_proposal')
+    .insert({
+      sender_user_id: input.sender_user_id,
+      receiver_user_id: input.receiver_user_id,
+      target_product_id: input.target_product_id,
+      status: 'pending',
+    })
+    .select('id')
+    .single();
+
+  if (proposalError) throw proposalError;
+
+  // 2. Insertar items ofrecidos
+  const itemsToInsert = input.offered_product_ids.map((prodId) => ({
+    barter_proposal_id: proposal.id,
+    product_id: prodId,
+  }));
+
+  const { error: itemsError } = await supabase
+    .from('barter_proposal_item')
+    .insert(itemsToInsert);
+
+  if (itemsError) throw itemsError;
+
+  // 3. Crear notificación para el receptor del trueque
+  const { error: notifError } = await supabase.from('notification').insert({
+    user_id: input.receiver_user_id,
+    title: 'Nueva propuesta de trueque',
+    message: 'Te han enviado una propuesta de intercambio.',
+    is_read: false,
+  });
+
+  if (notifError) console.warn('Error creating notification:', notifError);
+
+  return proposal.id;
+}
+
+export interface NotificationItem {
+  id: number;
+  user_id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  proposal_id?: number;
+  sender?: { full_name: string | null; photo_url: string | null };
+  proposal?: any;
+}
+
+export async function getNotifications(userId: string): Promise<NotificationItem[]> {
+  const { data, error } = await supabase
+    .from('notification')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Para enriquecer notificaciones con propuestas recibidas:
+  const { data: proposals } = await supabase
+    .from('barter_proposal')
+    .select(`
+      id,
+      sender:sender_user_id ( full_name, photo_url ),
+      target_product:target_product_id ( id, title, price, images:product_image ( url ) ),
+      offered_items:barter_proposal_item (
+        product:product_id ( id, title, price, images:product_image ( url ) )
+      )
+    `)
+    .eq('receiver_user_id', userId);
+
+  const proposalMap = new Map((proposals ?? []).map((p: any) => [p.id, p]));
+
+  return (data ?? []).map((n: any, idx: number) => {
+    // Vincular la propuesta correspondiente si aplica
+    const matchingProposal = (proposals ?? [])[idx] ?? null;
+    return {
+      ...n,
+      proposal_id: matchingProposal?.id,
+      sender: matchingProposal?.sender ?? null,
+      proposal: matchingProposal ?? null,
+    };
+  });
+}
+
+export async function getBarterProposalById(proposalId: number) {
+  const { data, error } = await supabase
+    .from('barter_proposal')
+    .select(`
+      id,
+      sender_user_id,
+      receiver_user_id,
+      target_product_id,
+      status,
+      created_at,
+      sender:sender_user_id ( full_name, photo_url ),
+      target_product:target_product_id ( id, title, price, user_id, images:product_image ( url ) ),
+      offered_items:barter_proposal_item (
+        product:product_id ( id, title, price, images:product_image ( url ) )
+      )
+    `)
+    .eq('id', proposalId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function markNotificationRead(notificationId: number): Promise<void> {
+  const { error } = await supabase
+    .from('notification')
+    .update({ is_read: true })
+    .eq('id', notificationId);
 
   if (error) throw error;
 }

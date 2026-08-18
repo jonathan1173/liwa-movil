@@ -25,7 +25,7 @@ function ProductCard({ product }: { product: Product }) {
     <TouchableOpacity
       activeOpacity={0.88}
       style={styles.cardWrapper}
-      onPress={() => router.push(`/producto/${product.id}` as any)}
+      onPress={() => router.push(`/trueque-inteligente?id=${product.id}` as any)}
     >
       <View style={[neumorphicStyles.card, styles.productCard]}>
         {/* Image area */}
@@ -58,7 +58,7 @@ function ProductCard({ product }: { product: Product }) {
           <TouchableOpacity
             style={styles.barterBtn}
             activeOpacity={0.85}
-            onPress={() => router.push(`/producto/${product.id}` as any)}
+            onPress={() => router.push(`/trueque-inteligente?id=${product.id}` as any)}
           >
             <Ionicons name="swap-horizontal" size={16} color={Colors.white} />
             <Text style={styles.barterBtnText}>Trueque</Text>
@@ -83,8 +83,17 @@ export default function TruequeScreen() {
     setError(false);
     try {
       const data = await getBarterProducts();
-      setProducts(data);
-    } catch {
+      let userId: string | null = null;
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        userId = userData?.user?.id ?? null;
+      } catch {
+        // Ignore auth error
+      }
+      const otherUserProducts = userId ? data.filter((p) => p.user_id !== userId) : data;
+      setProducts(otherUserProducts);
+    } catch (err: any) {
+      console.warn('Error fetching barter products:', err);
       setError(true);
     } finally {
       setLoading(false);
