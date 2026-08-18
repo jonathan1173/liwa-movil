@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   totalBox: {
-    backgroundColor: 'rgba(0,0,0,0.03)',
+    backgroundColor: 'rgba(200,0,0,0.1)',
     borderRadius: 14,
     padding: 14,
     gap: 8,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   warningText: {
-    // color: '#c0392b',
+    color: '#c0392b',
     fontSize: 11,
     fontWeight: '600',
   },

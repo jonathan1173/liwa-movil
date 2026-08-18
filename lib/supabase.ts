@@ -169,8 +169,6 @@ export async function getBarterProducts(): Promise<Product[]> {
     throw error;
   }
 
-  console.log('--- SUPABASE getBarterProducts RETURNED ROWS:', data?.length, data);
-
   return (data ?? []).map((p: any) => ({
     ...p,
     status: 'active',
