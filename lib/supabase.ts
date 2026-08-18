@@ -90,6 +90,12 @@ export async function getEthnicities() {
   return data ?? [];
 }
 
+export async function getStates() {
+  const { data, error } = await supabase.from('state').select('id, name').order('id');
+  if (error) throw error;
+  return data ?? [];
+}
+
 // ─── Product helpers ──────────────────────────────────────────────────────────
 
 export interface Product {
@@ -99,10 +105,12 @@ export interface Product {
   description: string | null;
   price: number;
   barter: boolean;
-  status?: string;
+  state_id?: number;
+  status?: string; // Nombre del estado de la tabla 'state' (ej: 'Activo', 'Apartado', 'Vendido')
   created_at: string;
   category: { name: string } | null;
   condition: { name: string } | null;
+  state?: { id: number; name: string } | null;
   images: { url: string }[];
 }
 
@@ -124,9 +132,11 @@ export async function getProducts(): Promise<Product[]> {
       description,
       price,
       barter,
+      state_id,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
+      state:state_id ( id, name ),
       images:product_image ( url )
     `)
     .order('created_at', { ascending: false });
@@ -136,11 +146,9 @@ export async function getProducts(): Promise<Product[]> {
     throw error;
   }
 
-  // console.log('--- SUPABASE getProducts RETURNED ROWS:', data?.length, data);
-
   return (data ?? []).map((p: any) => ({
     ...p,
-    status: 'active',
+    status: p.state?.name ?? 'Activo',
     barter: p.barter ?? true,
     images: formatProductImages(p.images),
   }));
@@ -156,9 +164,11 @@ export async function getBarterProducts(): Promise<Product[]> {
       description,
       price,
       barter,
+      state_id,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
+      state:state_id ( id, name ),
       images:product_image ( url )
     `)
     .eq('barter', true)
@@ -171,7 +181,7 @@ export async function getBarterProducts(): Promise<Product[]> {
 
   return (data ?? []).map((p: any) => ({
     ...p,
-    status: 'active',
+    status: p.state?.name ?? 'Activo',
     barter: true,
     images: formatProductImages(p.images),
   }));
@@ -188,9 +198,11 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
       description,
       price,
       barter,
+      state_id,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
+      state:state_id ( id, name ),
       images:product_image ( url )
     `)
     .eq('user_id', userId)
@@ -200,7 +212,7 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
 
   return (data ?? []).map((p: any) => ({
     ...p,
-    status: 'active',
+    status: p.state?.name ?? 'Activo',
     barter: p.barter ?? true,
     images: formatProductImages(p.images),
   }));
@@ -223,9 +235,11 @@ export async function getProductById(id: number): Promise<ProductDetail> {
       description,
       price,
       barter,
+      state_id,
       created_at,
       category:category_id ( name ),
       condition:condition_id ( name ),
+      state:state_id ( id, name ),
       images:product_image ( url ),
       seller:user_id ( full_name )
     `)
@@ -236,7 +250,7 @@ export async function getProductById(id: number): Promise<ProductDetail> {
 
   return {
     ...data,
-    status: 'active',
+    status: (data as any).state?.name ?? 'Activo',
     barter: (data as any).barter ?? true,
     category: Array.isArray((data as any).category)
       ? ((data as any).category[0] ?? null)
@@ -244,6 +258,9 @@ export async function getProductById(id: number): Promise<ProductDetail> {
     condition: Array.isArray((data as any).condition)
       ? ((data as any).condition[0] ?? null)
       : (data as any).condition ?? null,
+    state: Array.isArray((data as any).state)
+      ? ((data as any).state[0] ?? null)
+      : (data as any).state ?? null,
     images: formatProductImages((data as any).images),
     seller: (data as any).seller ?? null,
   } as ProductDetail;
@@ -260,6 +277,7 @@ export interface UpdateProductInput {
   barter?: boolean;
   category_id: number | null;
   condition_id: number | null;
+  state_id?: number | null;
   status?: string;
 }
 
@@ -267,16 +285,21 @@ export async function updateProductDetails(
   id: number,
   input: UpdateProductInput
 ): Promise<void> {
+  const updateData: any = {
+    title: input.title,
+    description: input.description,
+    price: input.price,
+    barter: input.barter ?? true,
+    category_id: input.category_id,
+    condition_id: input.condition_id,
+  };
+  if (input.state_id !== undefined && input.state_id !== null) {
+    updateData.state_id = input.state_id;
+  }
+
   const { error } = await supabase
     .from('product')
-    .update({
-      title: input.title,
-      description: input.description,
-      price: input.price,
-      barter: input.barter ?? true,
-      category_id: input.category_id,
-      condition_id: input.condition_id,
-    })
+    .update(updateData)
     .eq('id', id);
 
   if (error) throw error;
@@ -303,6 +326,7 @@ export interface CreateProductInput {
   barter?: boolean;
   category_id: number | null;
   condition_id: number | null;
+  state_id?: number;
 }
 
 export async function createProduct(input: CreateProductInput): Promise<number> {
@@ -321,6 +345,7 @@ export async function createProduct(input: CreateProductInput): Promise<number> 
       barter: input.barter ?? true,
       category_id: input.category_id,
       condition_id: input.condition_id,
+      state_id: input.state_id ?? 1, // id 1 = Activo por defecto
     })
     .select('id')
     .single();

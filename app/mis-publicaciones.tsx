@@ -1,5 +1,5 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getMyProducts, Product, supabase } from '@/lib/supabase';
+import { getMyProducts, getStates, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -16,21 +16,25 @@ import {
   View,
 } from 'react-native';
 
-// ─── Status badge config ──────────────────────────────────────────────────────
+// ─── Status badge config & Icon mapping ───────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  active:   { label: 'Activo',    color: '#2ecc71', bg: 'rgba(46,204,113,0.12)' },
-  reserved: { label: 'Reservado', color: '#f39c12', bg: 'rgba(243,156,18,0.12)' },
-  sold:     { label: 'Vendido',   color: '#e05c5c', bg: 'rgba(224,92,92,0.12)'  },
-  archived: { label: 'Archivado', color: Colors.textSecondary, bg: 'rgba(0,0,0,0.06)' },
+const STATUS_STYLE_MAP: Record<string, { color: string; bg: string; icon: any }> = {
+  Activo:    { color: '#2ecc71', bg: 'rgba(46,204,113,0.12)', icon: 'checkmark-circle-outline' },
+  Apartado:  { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: 'time-outline' },
+  'En espera': { color: '#e05c5c', bg: 'rgba(224,92,92,0.12)',  icon: 'hourglass-outline' },
 };
 
 function StatusBadge({ status }: { status?: string }) {
-  const cfg = STATUS_CONFIG[status ?? ''] ?? STATUS_CONFIG.archived;
+  const statusName = status ?? 'Activo';
+  const cfg = STATUS_STYLE_MAP[statusName] ?? {
+    color: Colors.accent,
+    bg: 'rgba(142,68,173,0.12)',
+    icon: 'pricetag-outline',
+  };
   return (
     <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
       <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
-      <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
+      <Text style={[styles.statusText, { color: cfg.color }]}>{statusName}</Text>
     </View>
   );
 }
@@ -110,34 +114,54 @@ function EmptyState() {
   );
 }
 
-// ─── Stats bar ────────────────────────────────────────────────────────────────
+// ─── Stats bar & Filter Cards ──────────────────────────────────────────────────
 
-function StatsBar({ products }: { products: Product[] }) {
+function StatsBar({
+  statesList,
+  products,
+  selectedState,
+  onSelectState,
+}: {
+  statesList: { id: number; name: string }[];
+  products: Product[];
+  selectedState: string | null;
+  onSelectState: (stateName: string | null) => void;
+}) {
   const counts = products.reduce<Record<string, number>>((acc, p) => {
-    const key = p.status ?? 'active';
+    const key = p.status ?? 'Activo';
     return { ...acc, [key]: (acc[key] ?? 0) + 1 };
   }, {});
-  const stats = [
-    { key: 'active',   label: 'Activos',    icon: 'checkmark-circle-outline' as const },
-    { key: 'reserved', label: 'apartado', icon: 'time-outline' as const },
-    { key: 'sold',     label: 'Vendidos',   icon: 'bag-check-outline' as const },
-  ];
 
   return (
     <View style={styles.statsRow}>
-      {stats.map(({ key, label, icon }) => (
-        <View key={key} style={[neumorphicStyles.card, styles.statCard]}>
-          <Ionicons
-            name={icon}
-            size={20}
-            color={STATUS_CONFIG[key].color}
-          />
-          <Text style={[styles.statCount, { color: STATUS_CONFIG[key].color }]}>
-            {counts[key] ?? 0}
-          </Text>
-          <Text style={styles.statLabel}>{label}</Text>
-        </View>
-      ))}
+      {statesList.map((st) => {
+        const isSelected = selectedState === st.name;
+        const styleInfo = STATUS_STYLE_MAP[st.name] ?? {
+          color: Colors.accent,
+          bg: 'rgba(142,68,173,0.12)',
+          icon: 'pricetag-outline',
+        };
+        return (
+          <TouchableOpacity
+            key={st.id}
+            activeOpacity={0.8}
+            style={[
+              neumorphicStyles.card,
+              styles.statCard,
+              isSelected && { borderColor: styleInfo.color, borderWidth: 2 },
+            ]}
+            onPress={() => onSelectState(isSelected ? null : st.name)}
+          >
+            <Ionicons name={styleInfo.icon} size={20} color={styleInfo.color} />
+            <Text style={[styles.statCount, { color: styleInfo.color }]}>
+              {counts[st.name] ?? 0}
+            </Text>
+            <Text style={styles.statLabel} numberOfLines={1}>
+              {st.name}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -146,6 +170,8 @@ function StatsBar({ products }: { products: Product[] }) {
 
 export default function MisPublicacionesScreen() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [dbStates, setDbStates] = useState<{ id: number; name: string }[]>([]);
+  const [selectedState, setSelectedState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -156,10 +182,20 @@ export default function MisPublicacionesScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const data = await getMyProducts(user.id);
-      setProducts(data);
-    } catch {
-      // silent — show empty state
+
+      const [prodsData, statesRes] = await Promise.all([
+        getMyProducts(user.id),
+        getStates(),
+      ]);
+
+      setProducts(prodsData);
+      setDbStates(statesRes.length > 0 ? statesRes : [
+        { id: 1, name: 'Activo' },
+        { id: 2, name: 'Apartado' },
+        { id: 3, name: 'En espera' },
+      ]);
+    } catch (err: any) {
+      console.warn('Error al cargar publicaciones o estados:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -183,6 +219,10 @@ export default function MisPublicacionesScreen() {
       return () => subscription.remove();
     }, [handleBack]),
   );
+
+  const filteredProducts = selectedState
+    ? products.filter((p) => (p.status ?? 'Activo').toLowerCase() === selectedState.toLowerCase())
+    : products;
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
@@ -220,13 +260,19 @@ export default function MisPublicacionesScreen() {
         {/* Stats + List */}
         {!loading && products.length > 0 && (
           <>
-            <StatsBar products={products} />
+            <StatsBar
+              statesList={dbStates}
+              products={products}
+              selectedState={selectedState}
+              onSelectState={setSelectedState}
+            />
 
             <Text style={styles.sectionLabel}>
-              {products.length} {products.length === 1 ? 'publicación' : 'publicaciones'}
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'publicación' : 'publicaciones'}
+              {selectedState ? ` (${selectedState})` : ''}
             </Text>
 
-            {products.map((p) => (
+            {filteredProducts.map((p) => (
               <ProductRow key={p.id} product={p} />
             ))}
           </>
