@@ -1,30 +1,30 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import {
-    addProductImage,
-    createProduct,
-    supabase,
-    uploadProductImage,
+  addProductImage,
+  createProduct,
+  supabase,
+  uploadProductImage,
 } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    BackHandler,
-    FlatList,
-    Image,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  BackHandler,
+  FlatList,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const MAX_IMAGES = 4;
@@ -265,6 +265,7 @@ export default function PublicarScreen() {
         price: parseFloat(price.replace(',', '.')),
         category_id: category?.id ?? null,
         condition_id: condition?.id ?? null,
+        state_id: 1,
       });
 
       // 2. Subir las imágenes
@@ -428,6 +429,7 @@ export default function PublicarScreen() {
                   placeholder="Nuevo, Usado, etc."
                   icon="layers-outline"
                 />
+           
               </>
             )}
           </View>

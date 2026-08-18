@@ -90,14 +90,26 @@ export async function getEthnicities() {
   return data ?? [];
 }
 
+export async function getStates() {
+  const { data, error } = await supabase.from('state').select('id, name').order('id');
+  if (error) throw error;
+  return data ?? [];
+}
+
 // ─── Product helpers ──────────────────────────────────────────────────────────
+
+export interface ProductState {
+  id: number;
+  name: string;
+}
 
 export interface Product {
   id: number;
   title: string;
   description: string | null;
   price: number;
-  status: string;
+  state_id: number | null;
+  state: ProductState | null;
   created_at: string;
   category: { name: string } | null;
   condition: { name: string } | null;
@@ -120,19 +132,23 @@ export async function getProducts(): Promise<Product[]> {
       title,
       description,
       price,
-      status,
+      state_id,
       created_at,
+      state:state_id ( id, name ),
       category:category_id ( name ),
       condition:condition_id ( name ),
       images:product_image ( url )
     `)
-    .eq('status', 'active')
+    .eq('state_id', 1)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
 
   return (data ?? []).map((p: any) => ({
     ...p,
+    state: Array.isArray(p.state) ? (p.state[0] ?? null) : (p.state ?? null),
+    category: Array.isArray(p.category) ? (p.category[0] ?? null) : (p.category ?? null),
+    condition: Array.isArray(p.condition) ? (p.condition[0] ?? null) : (p.condition ?? null),
     images: formatProductImages(p.images),
   }));
 }
@@ -146,8 +162,9 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
       title,
       description,
       price,
-      status,
+      state_id,
       created_at,
+      state:state_id ( id, name ),
       category:category_id ( name ),
       condition:condition_id ( name ),
       images:product_image ( url )
@@ -159,6 +176,9 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
 
   return (data ?? []).map((p: any) => ({
     ...p,
+    state: Array.isArray(p.state) ? (p.state[0] ?? null) : (p.state ?? null),
+    category: Array.isArray(p.category) ? (p.category[0] ?? null) : (p.category ?? null),
+    condition: Array.isArray(p.condition) ? (p.condition[0] ?? null) : (p.condition ?? null),
     images: formatProductImages(p.images),
   }));
 }
@@ -179,8 +199,9 @@ export async function getProductById(id: number): Promise<ProductDetail> {
       title,
       description,
       price,
-      status,
+      state_id,
       created_at,
+      state:state_id ( id, name ),
       category:category_id ( name ),
       condition:condition_id ( name ),
       images:product_image ( url ),
@@ -193,6 +214,9 @@ export async function getProductById(id: number): Promise<ProductDetail> {
 
   return {
     ...data,
+    state: Array.isArray((data as any).state)
+      ? ((data as any).state[0] ?? null)
+      : (data as any).state ?? null,
     category: Array.isArray((data as any).category)
       ? ((data as any).category[0] ?? null)
       : (data as any).category ?? null,
@@ -214,7 +238,7 @@ export interface UpdateProductInput {
   price: number;
   category_id: number | null;
   condition_id: number | null;
-  status: string;
+  state_id: number | null;
 }
 
 export async function updateProductDetails(
@@ -229,7 +253,7 @@ export async function updateProductDetails(
       price: input.price,
       category_id: input.category_id,
       condition_id: input.condition_id,
-      status: input.status,
+      state_id: input.state_id,
     })
     .eq('id', id);
 
@@ -256,6 +280,7 @@ export interface CreateProductInput {
   price: number;
   category_id: number | null;
   condition_id: number | null;
+  state_id?: number | null;
 }
 
 export async function createProduct(input: CreateProductInput): Promise<number> {
@@ -273,7 +298,7 @@ export async function createProduct(input: CreateProductInput): Promise<number> 
       price: input.price,
       category_id: input.category_id,
       condition_id: input.condition_id,
-      status: 'active',
+      state_id: input.state_id ?? 1,
     })
     .select('id')
     .single();
@@ -388,7 +413,8 @@ export interface FavoriteProduct {
   favoriteId: number;
   title: string;
   price: number;
-  status: string;
+  state_id: number | null;
+  state: ProductState | null;
   category: { name: string } | null;
   condition: { name: string } | null;
   images: { url: string }[];
@@ -404,7 +430,8 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
         id,
         title,
         price,
-        status,
+        state_id,
+        state:state_id ( id, name ),
         category:category_id ( name ),
         condition:condition_id ( name ),
         images:product_image ( url )
@@ -420,7 +447,10 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
     id: row.product.id,
     title: row.product.title,
     price: row.product.price,
-    status: row.product.status,
+    state_id: row.product.state_id,
+    state: Array.isArray(row.product.state)
+      ? (row.product.state[0] ?? null)
+      : row.product.state ?? null,
     category: Array.isArray(row.product.category)
       ? (row.product.category[0] ?? null)
       : row.product.category ?? null,

@@ -32,23 +32,9 @@ interface Option {
 
 const STATUS_OPTIONS: Option[] = [
   { id: 1, name: 'Activo' },
-  { id: 2, name: 'Reservado' },
-  { id: 3, name: 'Vendido' },
-  { id: 4, name: 'Archivado' },
+  { id: 2, name: 'Inactivo' },
+  { id: 3, name: 'Pendiente' },
 ];
-
-const STATUS_MAP: Record<string, string> = {
-  active: 'Activo',
-  reserved: 'Reservado',
-  sold: 'Vendido',
-  archived: 'Archivado',
-};
-const STATUS_VALUE_MAP: Record<string, string> = {
-  Activo: 'active',
-  Reservado: 'reserved',
-  Vendido: 'sold',
-  Archivado: 'archived',
-};
 
 // ─── Image Slot Component ───────────────────────────────────────────────────
 function ImageSlot({
@@ -224,9 +210,9 @@ export default function EditarProductoScreen() {
           setCondition({ id: 0, name: product.condition.name });
         }
 
-        const matchedStatus = STATUS_OPTIONS.find(
-          (s) => STATUS_VALUE_MAP[s.name] === product.status
-        );
+        const sid = product.state_id ?? product.state?.id;
+        const matchedStatus = STATUS_OPTIONS.find((s) => s.id === sid) ??
+          STATUS_OPTIONS.find((s) => s.name.toLowerCase() === product.state?.name?.toLowerCase());
         if (matchedStatus) setStatus(matchedStatus);
       } catch {
         Alert.alert('Error', 'No se pudo cargar el producto');
@@ -333,7 +319,7 @@ export default function EditarProductoScreen() {
         price: parseFloat(price.replace(',', '.')),
         category_id: category?.id && category.id !== 0 ? category.id : null,
         condition_id: condition?.id && condition.id !== 0 ? condition.id : null,
-        status: STATUS_VALUE_MAP[status.name] ?? 'active',
+        state_id: status.id,
       });
 
       setSaveProgress('Actualizando fotos…');

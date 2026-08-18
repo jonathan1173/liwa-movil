@@ -2,7 +2,7 @@ import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getMyProducts, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -16,17 +16,34 @@ import {
   View,
 } from 'react-native';
 
-// ─── Status badge config ──────────────────────────────────────────────────────
+// ─── State badge config ──────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  active:   { label: 'Activo',    color: '#2ecc71', bg: 'rgba(46,204,113,0.12)' },
-  reserved: { label: 'Reservado', color: '#f39c12', bg: 'rgba(243,156,18,0.12)' },
-  sold:     { label: 'Vendido',   color: '#e05c5c', bg: 'rgba(224,92,92,0.12)'  },
-  archived: { label: 'Archivado', color: Colors.textSecondary, bg: 'rgba(0,0,0,0.06)' },
+const STATE_CONFIG: Record<
+  number,
+  { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  1: { label: 'Activo', color: '#2ecc71', bg: 'rgba(46,204,113,0.12)', icon: 'checkmark-circle-outline' },
+  2: { label: 'Inactivo', color: '#7f8c8d', bg: 'rgba(127,140,141,0.12)', icon: 'pause-circle-outline' },
+  3: { label: 'Pendiente', color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: 'time-outline' },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.archived;
+function StatusBadge({ stateId, stateName }: { stateId?: number | null; stateName?: string | null }) {
+  let cfg = (stateId && STATE_CONFIG[stateId]) ?? null;
+  if (!cfg && stateName) {
+    const foundId = Object.keys(STATE_CONFIG).find(
+      (k) => STATE_CONFIG[Number(k)].label.toLowerCase() === stateName.toLowerCase()
+    );
+    if (foundId) cfg = STATE_CONFIG[Number(foundId)];
+  }
+  if (!cfg) {
+    cfg = {
+      label: stateName ?? 'Desconocido',
+      color: Colors.textSecondary,
+      bg: 'rgba(0,0,0,0.06)',
+      icon: 'help-circle-outline',
+    };
+  }
+
   return (
     <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
       <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
@@ -59,7 +76,9 @@ function ProductRow({ product }: { product: Product }) {
 
         {/* Info */}
         <View style={styles.rowInfo}>
-          <Text style={styles.rowTitle} numberOfLines={2}>{product.title}</Text>
+          <Text style={styles.rowTitle} numberOfLines={2}>
+            {product.title}
+          </Text>
 
           <View style={styles.rowMeta}>
             {product.category && (
@@ -67,7 +86,7 @@ function ProductRow({ product }: { product: Product }) {
                 {product.category.name}
               </Text>
             )}
-            <StatusBadge status={product.status} />
+            <StatusBadge stateId={product.state_id} stateName={product.state?.name} />
           </View>
 
           <Text style={styles.rowPrice}>
@@ -88,15 +107,19 @@ function ProductRow({ product }: { product: Product }) {
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyState() {
+function EmptyState({ categoryName }: { categoryName?: string }) {
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
         <Ionicons name="storefront-outline" size={40} color={Colors.accent} />
       </View>
-      <Text style={styles.emptyTitle}>Sin publicaciones</Text>
+      <Text style={styles.emptyTitle}>
+        {categoryName ? `Sin publicaciones ${categoryName}` : 'Sin publicaciones'}
+      </Text>
       <Text style={styles.emptySubtitle}>
-        Aún no has publicado ningún producto.{'\n'}¡Empieza a vender ahora!
+        {categoryName
+          ? `No tienes productos en la categoría "${categoryName}".`
+          : 'Aún no has publicado ningún producto.\n¡Empieza a vender ahora!'}
       </Text>
       <TouchableOpacity
         style={[neumorphicStyles.button, styles.publishBtn]}
@@ -112,33 +135,94 @@ function EmptyState() {
 
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 
-function StatsBar({ products }: { products: Product[] }) {
-  const counts = products.reduce<Record<string, number>>(
-    (acc, p) => ({ ...acc, [p.status]: (acc[p.status] ?? 0) + 1 }),
-    {}
-  );
+function StatsBar({
+  products,
+  selectedTab,
+  onSelectTab,
+}: {
+  products: Product[];
+  selectedTab: number;
+  onSelectTab: (tab: number) => void;
+}) {
+  const counts = products.reduce<Record<number, number>>((acc, p) => {
+    const sid = p.state_id ?? p.state?.id ?? 1;
+    acc[sid] = (acc[sid] ?? 0) + 1;
+    return acc;
+  }, {});
+
   const stats = [
-    { key: 'active',   label: 'Activos',    icon: 'checkmark-circle-outline' as const },
-    { key: 'reserved', label: 'apartado', icon: 'time-outline' as const },
-    { key: 'sold',     label: 'Vendidos',   icon: 'bag-check-outline' as const },
+    { id: 1, label: 'Activos', icon: STATE_CONFIG[1].icon },
+    { id: 2, label: 'Inactivos', icon: STATE_CONFIG[2].icon },
+    { id: 3, label: 'En espera', icon: STATE_CONFIG[3].icon },
   ];
 
   return (
     <View style={styles.statsRow}>
-      {stats.map(({ key, label, icon }) => (
-        <View key={key} style={[neumorphicStyles.card, styles.statCard]}>
-          <Ionicons
-            name={icon}
-            size={20}
-            color={STATUS_CONFIG[key].color}
-          />
-          <Text style={[styles.statCount, { color: STATUS_CONFIG[key].color }]}>
-            {counts[key] ?? 0}
-          </Text>
-          <Text style={styles.statLabel}>{label}</Text>
-        </View>
-      ))}
+      {stats.map(({ id, label, icon }) => {
+        const isActive = selectedTab === id;
+        const cfg = STATE_CONFIG[id];
+        return (
+          <TouchableOpacity
+            key={id}
+            activeOpacity={0.8}
+            onPress={() => onSelectTab(isActive ? 0 : id)}
+            style={[
+              neumorphicStyles.card,
+              styles.statCard,
+              isActive && { borderColor: cfg.color, borderWidth: 1.5 },
+            ]}
+          >
+            <Ionicons name={icon} size={20} color={cfg.color} />
+            <Text style={[styles.statCount, { color: cfg.color }]}>{counts[id] ?? 0}</Text>
+            <Text style={styles.statLabel}>{label}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
+  );
+}
+
+// ─── Category Tabs ───────────────────────────────────────────────────────────
+
+const CATEGORY_TABS = [
+  { id: 0, label: 'Todos' },
+  { id: 1, label: 'Activos' },
+  { id: 2, label: 'Inactivos' },
+  { id: 3, label: 'Pendientes' },
+];
+
+function CategoryTabsBar({
+  selectedTab,
+  onSelectTab,
+}: {
+  selectedTab: number;
+  onSelectTab: (id: number) => void;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.tabsContainer}
+    >
+      {CATEGORY_TABS.map((tab) => {
+        const isSelected = selectedTab === tab.id;
+        return (
+          <TouchableOpacity
+            key={tab.id}
+            onPress={() => onSelectTab(tab.id)}
+            activeOpacity={0.8}
+            style={[
+              styles.tabPill,
+              isSelected && styles.tabPillActive,
+            ]}
+          >
+            <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -148,13 +232,16 @@ export default function MisPublicacionesScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<number>(0); // 0 = Todos, 1 = Activos, 2 = Inactivos, 3 = Pendientes
 
   async function fetchProducts(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const data = await getMyProducts(user.id);
       setProducts(data);
@@ -184,6 +271,21 @@ export default function MisPublicacionesScreen() {
     }, [handleBack]),
   );
 
+  const filteredProducts = useMemo(() => {
+    if (selectedTab === 0) return products;
+    return products.filter((p) => {
+      const sid = p.state_id ?? p.state?.id;
+      if (sid != null) return sid === selectedTab;
+      // fallback by name
+      if (selectedTab === 1) return p.state?.name === 'Activo';
+      if (selectedTab === 2) return p.state?.name === 'Inactivo';
+      if (selectedTab === 3) return p.state?.name === 'Pendiente';
+      return false;
+    });
+  }, [products, selectedTab]);
+
+  const activeTabLabel = CATEGORY_TABS.find((t) => t.id === selectedTab)?.label;
+
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
       <ScrollView
@@ -200,11 +302,7 @@ export default function MisPublicacionesScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backCircle}
-            onPress={handleBack}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={styles.backCircle} onPress={handleBack} activeOpacity={0.85}>
             <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
           </TouchableOpacity>
           <Text style={[neumorphicStyles.title, styles.pageTitle]}>Mis Ventas</Text>
@@ -217,23 +315,26 @@ export default function MisPublicacionesScreen() {
           </View>
         )}
 
-        {/* Stats + List */}
-        {!loading && products.length > 0 && (
+        {!loading && (
           <>
-            <StatsBar products={products} />
+            {/* Stats Bar */}
+            <StatsBar products={products} selectedTab={selectedTab} onSelectTab={setSelectedTab} />
 
+            {/* Section label */}
             <Text style={styles.sectionLabel}>
-              {products.length} {products.length === 1 ? 'publicación' : 'publicaciones'}
+              {filteredProducts.length}{' '}
+              {filteredProducts.length === 1 ? 'publicación' : 'publicaciones'}{' '}
+              {selectedTab !== 0 ? `(${activeTabLabel})` : ''}
             </Text>
 
-            {products.map((p) => (
-              <ProductRow key={p.id} product={p} />
-            ))}
+            {/* Product List */}
+            {filteredProducts.length > 0 ? (
+              filteredProducts.map((p) => <ProductRow key={p.id} product={p} />)
+            ) : (
+              <EmptyState categoryName={selectedTab !== 0 ? activeTabLabel : undefined} />
+            )}
           </>
         )}
-
-        {/* Empty */}
-        {!loading && products.length === 0 && <EmptyState />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -279,7 +380,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,
@@ -299,6 +400,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
     textTransform: 'uppercase',
+  },
+
+  // Category Tabs
+  tabsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingBottom: 16,
+  },
+  tabPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    shadowColor: Colors.shadowDark,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabPillActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  tabTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
   },
 
   sectionLabel: {
@@ -388,7 +522,7 @@ const styles = StyleSheet.create({
   // Empty state
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 64,
+    paddingVertical: 48,
     gap: 12,
   },
   emptyIconCircle: {
@@ -417,7 +551,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     lineHeight: 20,
-    maxWidth: 240,
+    maxWidth: 260,
   },
   publishBtn: {
     flexDirection: 'row',
