@@ -76,8 +76,28 @@ export default function NotificacionesScreen() {
     const senderName = item.sender?.full_name ?? 'Un usuario';
     const senderPhoto = item.sender?.photo_url;
     const targetTitle = item.proposal?.target_product?.title ?? 'tu producto';
-    const targetImg = item.proposal?.target_product?.images?.[0]?.url;
-    const firstOfferedImg = item.proposal?.offered_items?.[0]?.product?.images?.[0]?.url;
+    const barterStateName = item.proposal?.barter_state?.name?.toLowerCase() ?? '';
+    const isAccepted = barterStateName.includes('aceptad') || barterStateName.includes('completad') || item.proposal?.state_id === 2;
+    const isRejected = barterStateName.includes('rechazad') || barterStateName.includes('cancelad') || item.proposal?.state_id === 3;
+
+    let statusIconName: keyof typeof Ionicons.glyphMap = 'swap-horizontal';
+    let statusBgColor = 'rgba(214, 48, 49, 0.1)';
+    let statusIconColor: string = Colors.accent;
+    let statusLabel = item.proposal?.barter_state?.name ?? 'Pendiente';
+
+    if (isAccepted) {
+      statusIconName = 'checkmark-circle';
+      statusBgColor = 'rgba(39, 174, 96, 0.15)';
+      statusIconColor = '#27ae60';
+    } else if (isRejected) {
+      statusIconName = 'close-circle';
+      statusBgColor = 'rgba(192, 57, 43, 0.15)';
+      statusIconColor = '#c0392b';
+    } else {
+      statusIconName = 'time-outline';
+      statusBgColor = 'rgba(243, 156, 18, 0.15)';
+      statusIconColor = '#f39c12';
+    }
 
     return (
       <TouchableOpacity
@@ -104,16 +124,17 @@ export default function NotificacionesScreen() {
               {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
-          
-          {/* {!item.is_read && <View style={styles.unreadDot} />} */} 
         </View>
 
-        {/* Bottom Box: Ícono de trueque + Botón Revisar oferta */}
+        {/* Bottom Box: Estado del trueque + Botón Revisar oferta */}
         <View style={styles.offerPreviewBox}>
           <View style={styles.miniImagesRow}>
-            <View style={styles.barterIconContainer}>
-              <Ionicons name="swap-horizontal" size={20} color={Colors.accent} />
+            <View style={[styles.barterIconContainer, { backgroundColor: statusBgColor }]}>
+              <Ionicons name={statusIconName} size={20} color={statusIconColor} />
             </View>
+            <Text style={{ marginLeft: 8, fontSize: 13, fontWeight: '700', color: statusIconColor }}>
+              {statusLabel}
+            </Text>
           </View>
 
           <TouchableOpacity

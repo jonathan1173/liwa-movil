@@ -139,6 +139,7 @@ export async function getProducts(): Promise<Product[]> {
       state:state_id ( id, name ),
       images:product_image ( url )
     `)
+    .or('state_id.eq.1,state_id.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -172,6 +173,7 @@ export async function getBarterProducts(): Promise<Product[]> {
       images:product_image ( url )
     `)
     .eq('barter', true)
+    .or('state_id.eq.1,state_id.is.null')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -547,21 +549,37 @@ export interface SendProposalInput {
 }
 
 export async function sendBarterProposal(input: SendProposalInput): Promise<number> {
-  // 1. Crear propuesta
+  // 1. Obtener los estados disponibles en barter_state (con fallback seguro a id 1)
+  let pendingStateId = 1;
+  try {
+    const { data: states } = await supabase
+      .from('barter_state')
+      .select('id, name')
+      .order('id', { ascending: true });
+
+    if (states && states.length > 0) {
+      const pendingState = states.find((s) => s.name.toLowerCase().includes('pendient')) ?? states[0];
+      pendingStateId = pendingState.id;
+    }
+  } catch (e) {
+    console.warn('Could not fetch barter_state, defaulting to state_id 1:', e);
+  }
+
+  // 2. Crear propuesta
   const { data: proposal, error: proposalError } = await supabase
     .from('barter_proposal')
     .insert({
       sender_user_id: input.sender_user_id,
       receiver_user_id: input.receiver_user_id,
       target_product_id: input.target_product_id,
-      status: 'pending',
+      state_id: pendingStateId,
     })
     .select('id')
     .single();
 
   if (proposalError) throw proposalError;
 
-  // 2. Insertar items ofrecidos
+  // 3. Insertar items ofrecidos
   const itemsToInsert = input.offered_product_ids.map((prodId) => ({
     barter_proposal_id: proposal.id,
     product_id: prodId,
@@ -573,7 +591,7 @@ export async function sendBarterProposal(input: SendProposalInput): Promise<numb
 
   if (itemsError) throw itemsError;
 
-  // 3. Crear notificación para el receptor del trueque
+  // 4. Crear notificación para el receptor del trueque
   const { error: notifError } = await supabase.from('notification').insert({
     user_id: input.receiver_user_id,
     title: 'Nueva propuesta de trueque',
@@ -614,7 +632,8 @@ export async function getNotifications(userId: string): Promise<NotificationItem
     .select(`
       id,
       created_at,
-      status,
+      state_id,
+      barter_state:state_id ( id, name ),
       sender:sender_user_id ( full_name, photo_url ),
       target_product:target_product_id ( id, title, price, images:product_image ( url ) ),
       offered_items:barter_proposal_item (
@@ -625,10 +644,6 @@ export async function getNotifications(userId: string): Promise<NotificationItem
     .order('created_at', { ascending: false });
 
   if (propError) console.warn('Error fetching barter proposals:', propError);
-
-  console.log('=== DEBUG: User ID ===', userId);
-  console.log('=== DEBUG: Notifications Table Rows ===', notificationsData);
-  console.log('=== DEBUG: Barter Proposals Table Rows ===', proposals);
 
   const items: NotificationItem[] = [];
 
@@ -659,7 +674,6 @@ export async function getNotifications(userId: string): Promise<NotificationItem
   // Ordenar por fecha descendente
   items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  console.log('=== DEBUG: Final Combined Notifications List ===', items);
   return items;
 }
 
@@ -671,8 +685,9 @@ export async function getBarterProposalById(proposalId: number) {
       sender_user_id,
       receiver_user_id,
       target_product_id,
-      status,
+      state_id,
       created_at,
+      barter_state:state_id ( id, name ),
       sender:sender_user_id ( full_name, photo_url ),
       target_product:target_product_id ( id, title, price, user_id, images:product_image ( url ) ),
       offered_items:barter_proposal_item (
@@ -687,12 +702,51 @@ export async function getBarterProposalById(proposalId: number) {
 }
 
 export async function updateBarterProposalStatus(proposalId: number, status: 'accepted' | 'rejected') {
-  const { error } = await supabase
+  // 1. Obtener todos los barter_state para encontrar el ID del estado según el nombre
+  let targetStateId = status === 'accepted' ? 2 : 3;
+
+  try {
+    const { data: states } = await supabase
+      .from('barter_state')
+      .select('id, name')
+      .order('id', { ascending: true });
+
+    if (states && states.length > 0) {
+      if (status === 'accepted') {
+        const found = states.find((s) =>
+          s.name.toLowerCase().includes('aceptad') || s.name.toLowerCase().includes('aceptar') || s.name.toLowerCase().includes('completad')
+        );
+        if (found) targetStateId = found.id;
+      } else {
+        const found = states.find((s) =>
+          s.name.toLowerCase().includes('rechazad') || s.name.toLowerCase().includes('cancelad')
+        );
+        if (found) targetStateId = found.id;
+      }
+    }
+  } catch (e) {
+    console.warn('Could not fetch barter_state, using default targetStateId:', e);
+  }
+
+  // 2. Actualizar el state_id de la propuesta
+  const { data: updatedProposal, error } = await supabase
     .from('barter_proposal')
-    .update({ status })
-    .eq('id', proposalId);
+    .update({ state_id: targetStateId })
+    .eq('id', proposalId)
+    .select('target_product_id')
+    .single();
 
   if (error) throw error;
+
+  // 3. Si fue aceptado, cambiar el state_id de la publicación del producto destino a 2
+  if (status === 'accepted' && updatedProposal?.target_product_id) {
+    const { error: prodErr } = await supabase
+      .from('product')
+      .update({ state_id: 2 })
+      .eq('id', updatedProposal.target_product_id);
+
+    if (prodErr) console.warn('Error updating target product state_id to 2:', prodErr);
+  }
 }
 
 export async function markNotificationRead(notificationId: number): Promise<void> {

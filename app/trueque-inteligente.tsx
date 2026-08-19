@@ -280,40 +280,56 @@ export default function TruequeInteligenteScreen() {
           </View>
 
           {/* Botones de Acción para el Vendedor */}
-          {proposalData?.status === 'pending' ? (
-            <View style={styles.actionButtonsCol}>
-              <TouchableOpacity
-                style={styles.acceptBtn}
-                onPress={handleAcceptProposal}
-                disabled={submitting}
-                activeOpacity={0.85}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <>
-                    <Ionicons name="hand-left-outline" size={20} color={Colors.white} style={{ marginRight: 8 }} />
-                    <Text style={styles.acceptBtnText}>Aceptar Trueque</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+          {(() => {
+            const stName = proposalData?.barter_state?.name?.toLowerCase() ?? '';
+            const isPending = stName.includes('pendient') || proposalData?.state_id === 1 || !proposalData?.state_id;
+            const isAccepted = stName.includes('aceptad') || stName.includes('completad') || proposalData?.state_id === 2;
 
-              <TouchableOpacity
-                style={styles.rejectBtn}
-                onPress={handleRejectProposal}
-                disabled={submitting}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.rejectBtnText}>Rechazar</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={[styles.statusBanner, { backgroundColor: proposalData?.status === 'accepted' ? '#d4efdf' : '#fadbd8' }]}>
-              <Text style={[styles.statusBannerText, { color: proposalData?.status === 'accepted' ? '#27ae60' : '#c0392b' }]}>
-                Propuesta {proposalData?.status === 'accepted' ? 'Aceptada' : 'Rechazada'}
-              </Text>
-            </View>
-          )}
+            if (isPending) {
+              return (
+                <View style={styles.actionButtonsCol}>
+                  <TouchableOpacity
+                    style={styles.acceptBtn}
+                    onPress={handleAcceptProposal}
+                    disabled={submitting}
+                    activeOpacity={0.85}
+                  >
+                    {submitting ? (
+                      <ActivityIndicator color={Colors.white} />
+                    ) : (
+                      <>
+                        <Ionicons name="hand-left-outline" size={20} color={Colors.white} style={{ marginRight: 8 }} />
+                        <Text style={styles.acceptBtnText}>Aceptar Trueque</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={handleRejectProposal}
+                    disabled={submitting}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.rejectBtnText}>Rechazar</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            }
+
+            const bannerText = proposalData?.barter_state?.name
+              ? `Propuesta: ${proposalData.barter_state.name}`
+              : isAccepted
+              ? 'Propuesta Aceptada'
+              : 'Propuesta Rechazada';
+
+            return (
+              <View style={[styles.statusBanner, { backgroundColor: isAccepted ? '#d4efdf' : '#fadbd8' }]}>
+                <Text style={[styles.statusBannerText, { color: isAccepted ? '#27ae60' : '#c0392b' }]}>
+                  {bannerText}
+                </Text>
+              </View>
+            );
+          })()}
         </ScrollView>
       </SafeAreaView>
     );
