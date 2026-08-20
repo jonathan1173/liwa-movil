@@ -1,8 +1,8 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View, Text } from 'react-native';
 import { Colors } from '@/constants/NeumorphicStyles';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 function TabIcon({
   name,
@@ -58,6 +58,7 @@ export default function TabLayout() {
         },
       }}
     >
+
       {/* ── Inicio ── */}
       <Tabs.Screen
         name="inicio"
@@ -65,6 +66,17 @@ export default function TabLayout() {
           title: 'Inicio',
           tabBarIcon: ({ focused }) => (
             <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+          ),
+        }}
+      />
+
+      {/* ── Trueque ── */}
+      <Tabs.Screen
+        name="trueque"
+        options={{
+          title: 'Trueque',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'swap-horizontal' : 'swap-horizontal-outline'} focused={focused} />
           ),
         }}
       />
@@ -77,6 +89,17 @@ export default function TabLayout() {
           tabBarIcon: () => <PublishTabIcon />,
           tabBarLabel: () => null,
           tabBarStyle: { display: 'none' },
+        }}
+      />
+
+      {/* ── Notificaciones ── */}
+      <Tabs.Screen
+        name="notificaciones"
+        options={{
+          title: 'Notificaciones',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} />
+          ),
         }}
       />
 

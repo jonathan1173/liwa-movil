@@ -131,6 +131,11 @@ function PickerField({
 }
 
 // ─── Main Edit Screen ─────────────────────────────────────────────────────────
+const BARTER_OPTIONS: Option[] = [
+  { id: 1, name: 'Sí' },
+  { id: 2, name: 'No' },
+];
+
 export default function EditarProductoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -141,13 +146,15 @@ export default function EditarProductoScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [barterOption, setBarterOption] = useState<Option>(BARTER_OPTIONS[0]);
   const [category, setCategory] = useState<Option | null>(null);
   const [condition, setCondition] = useState<Option | null>(null);
-  const [status, setStatus] = useState<Option>(STATUS_OPTIONS[0]);
+  const [status, setStatus] = useState<Option | null>(null);
 
   // Catalogs
   const [categories, setCategories] = useState<Option[]>([]);
   const [conditions, setConditions] = useState<Option[]>([]);
+  const [states, setStates] = useState<Option[]>([]);
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
 
   // Submission
@@ -163,14 +170,29 @@ export default function EditarProductoScreen() {
   useEffect(() => {
     async function load() {
       try {
-        const [cats, conds] = await Promise.all([
+        const [cats, conds, stList] = await Promise.all([
           supabase.from('category').select('id, name').order('name'),
           supabase.from('product_condition').select('id, name').order('name'),
+          supabase.from('state').select('id, name').order('id'),
         ]);
         setCategories(cats.data ?? []);
         setConditions(conds.data ?? []);
-      } catch {
-        Alert.alert('Error', 'No se pudieron cargar los catálogos');
+        const loadedStates = (stList.data && stList.data.length > 0)
+          ? stList.data
+          : [
+              { id: 1, name: 'Activo' },
+              { id: 2, name: 'Apartado' },
+              { id: 3, name: 'En espera' },
+            ];
+        console.log('=== DEBUG EDIT PRODUCT: STATES LOADED ===', loadedStates);
+        setStates(loadedStates);
+      } catch (err) {
+        console.warn('Error al cargar catálogos:', err);
+        setStates([
+          { id: 1, name: 'Activo' },
+          { id: 2, name: 'Apartado' },
+          { id: 3, name: 'En espera' },
+        ]);
       } finally {
         setLoadingCatalogs(false);
       }
@@ -187,6 +209,7 @@ export default function EditarProductoScreen() {
         setTitle(product.title);
         setDescription(product.description ?? '');
         setPrice(String(product.price));
+        setBarterOption(product.barter ? BARTER_OPTIONS[0] : BARTER_OPTIONS[1]);
 
         if (product.images && product.images.length > 0) {
           const uniqueUrls: string[] = [];
@@ -203,17 +226,16 @@ export default function EditarProductoScreen() {
         }
 
         if (product.category) {
-          // Find matching catalog option by name (catalogs may not be loaded yet — we'll re-sync below)
           setCategory({ id: 0, name: product.category.name });
         }
         if (product.condition) {
           setCondition({ id: 0, name: product.condition.name });
         }
-
-        const sid = product.state_id ?? product.state?.id;
-        const matchedStatus = STATUS_OPTIONS.find((s) => s.id === sid) ??
-          STATUS_OPTIONS.find((s) => s.name.toLowerCase() === product.state?.name?.toLowerCase());
-        if (matchedStatus) setStatus(matchedStatus);
+        if (product.state) {
+          setStatus({ id: product.state.id, name: product.state.name });
+        } else if (product.state_id) {
+          setStatus({ id: product.state_id, name: product.status ?? 'Activo' });
+        }
       } catch {
         Alert.alert('Error', 'No se pudo cargar el producto');
         router.back();
@@ -235,6 +257,11 @@ export default function EditarProductoScreen() {
     setCondition((prev) => {
       if (!prev) return null;
       const match = conditions.find((c) => c.name === prev.name);
+      return match ?? prev;
+    });
+    setStatus((prev) => {
+      if (!prev) return states[0] ?? { id: 1, name: 'Activo' };
+      const match = states.find((s) => s.id === prev.id || s.name.toLowerCase() === prev.name.toLowerCase());
       return match ?? prev;
     });
   }, [loadingCatalogs, loadingProduct]);
@@ -317,9 +344,10 @@ export default function EditarProductoScreen() {
         title: title.trim(),
         description: description.trim(),
         price: parseFloat(price.replace(',', '.')),
+        barter: barterOption.name === 'Sí',
         category_id: category?.id && category.id !== 0 ? category.id : null,
         condition_id: condition?.id && condition.id !== 0 ? condition.id : null,
-        state_id: status.id,
+        state_id: status?.id && status.id !== 0 ? status.id : 1,
       });
 
       setSaveProgress('Actualizando fotos…');
@@ -440,9 +468,9 @@ export default function EditarProductoScreen() {
             </View>
           </View>
 
-          {/* Categorización */}
+          {/* Categorización y Opciones */}
           <View style={[neumorphicStyles.card, styles.section]}>
-            <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>Categorización</Text>
+            <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>Categorización y Opciones</Text>
 
             {loadingCatalogs ? (
               <ActivityIndicator color={Colors.accent} style={{ marginVertical: 12 }} />
@@ -472,13 +500,29 @@ export default function EditarProductoScreen() {
           {/* Estado */}
           <View style={[neumorphicStyles.card, styles.section]}>
             <Text style={[neumorphicStyles.label, { marginBottom: 16 }]}>Estado de la publicación</Text>
+
             <PickerField
-              label="Estado"
-              value={status}
-              options={STATUS_OPTIONS}
-              onSelect={setStatus}
-              icon="toggle-outline"
+              label="¿Acepta trueque?"
+              value={barterOption}
+              options={BARTER_OPTIONS}
+              onSelect={setBarterOption}
+              placeholder="Selecciona..."
+              icon="swap-horizontal-outline"
             />
+            <View style={styles.gap} />
+
+            {loadingCatalogs ? (
+              <ActivityIndicator color={Colors.accent} style={{ marginVertical: 12 }} />
+            ) : (
+              <PickerField
+                label="Estado"
+                value={status}
+                options={states}
+                onSelect={setStatus}
+                placeholder="Selecciona estado"
+                icon="toggle-outline"
+              />
+            )}
           </View>
 
           {/* Botón Guardar */}

@@ -1,5 +1,5 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getMyProducts, Product, supabase } from '@/lib/supabase';
+import { getMyProducts, getStates, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -16,38 +16,25 @@ import {
   View,
 } from 'react-native';
 
-// ─── State badge config ──────────────────────────────────────────────────────
+// ─── State badge config & Icon mapping ───────────────────────────────────────
 
-const STATE_CONFIG: Record<
-  number,
-  { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }
-> = {
-  1: { label: 'Activo', color: '#2ecc71', bg: 'rgba(46,204,113,0.12)', icon: 'checkmark-circle-outline' },
-  2: { label: 'Inactivo', color: '#7f8c8d', bg: 'rgba(127,140,141,0.12)', icon: 'pause-circle-outline' },
-  3: { label: 'Pendiente', color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: 'time-outline' },
+const STATUS_STYLE_MAP: Record<string, { color: string; bg: string; icon: any }> = {
+  Activo:    { color: '#2ecc71', bg: 'rgba(46,204,113,0.12)', icon: 'checkmark-circle-outline' },
+  Apartado:  { color: '#f39c12', bg: 'rgba(243,156,18,0.12)', icon: 'time-outline' },
+  'En espera': { color: '#e05c5c', bg: 'rgba(224,92,92,0.12)',  icon: 'hourglass-outline' },
 };
 
-function StatusBadge({ stateId, stateName }: { stateId?: number | null; stateName?: string | null }) {
-  let cfg = (stateId && STATE_CONFIG[stateId]) ?? null;
-  if (!cfg && stateName) {
-    const foundId = Object.keys(STATE_CONFIG).find(
-      (k) => STATE_CONFIG[Number(k)].label.toLowerCase() === stateName.toLowerCase()
-    );
-    if (foundId) cfg = STATE_CONFIG[Number(foundId)];
-  }
-  if (!cfg) {
-    cfg = {
-      label: stateName ?? 'Desconocido',
-      color: Colors.textSecondary,
-      bg: 'rgba(0,0,0,0.06)',
-      icon: 'help-circle-outline',
-    };
-  }
-
+function StatusBadge({ status }: { status?: string }) {
+  const statusName = status ?? 'Activo';
+  const cfg = STATUS_STYLE_MAP[statusName] ?? {
+    color: Colors.accent,
+    bg: 'rgba(142,68,173,0.12)',
+    icon: 'pricetag-outline',
+  };
   return (
     <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
       <View style={[styles.statusDot, { backgroundColor: cfg.color }]} />
-      <Text style={[styles.statusText, { color: cfg.color }]}>{cfg.label}</Text>
+      <Text style={[styles.statusText, { color: cfg.color }]}>{statusName}</Text>
     </View>
   );
 }
@@ -86,7 +73,7 @@ function ProductRow({ product }: { product: Product }) {
                 {product.category.name}
               </Text>
             )}
-            <StatusBadge stateId={product.state_id} stateName={product.state?.name} />
+            <StatusBadge status={product.status} />
           </View>
 
           <Text style={styles.rowPrice}>
@@ -133,48 +120,52 @@ function EmptyState({ categoryName }: { categoryName?: string }) {
   );
 }
 
-// ─── Stats bar ────────────────────────────────────────────────────────────────
+// ─── Stats bar & Filter Cards ──────────────────────────────────────────────────
 
 function StatsBar({
+function StatsBar({
+  statesList,
   products,
-  selectedTab,
-  onSelectTab,
+  selectedState,
+  onSelectState,
 }: {
+  statesList: { id: number; name: string }[];
   products: Product[];
-  selectedTab: number;
-  onSelectTab: (tab: number) => void;
+  selectedState: string | null;
+  onSelectState: (stateName: string | null) => void;
 }) {
-  const counts = products.reduce<Record<number, number>>((acc, p) => {
-    const sid = p.state_id ?? p.state?.id ?? 1;
-    acc[sid] = (acc[sid] ?? 0) + 1;
-    return acc;
+  const counts = products.reduce<Record<string, number>>((acc, p) => {
+    const key = p.status ?? 'Activo';
+    return { ...acc, [key]: (acc[key] ?? 0) + 1 };
   }, {});
-
-  const stats = [
-    { id: 1, label: 'Activos', icon: STATE_CONFIG[1].icon },
-    { id: 2, label: 'Inactivos', icon: STATE_CONFIG[2].icon },
-    { id: 3, label: 'En espera', icon: STATE_CONFIG[3].icon },
-  ];
 
   return (
     <View style={styles.statsRow}>
-      {stats.map(({ id, label, icon }) => {
-        const isActive = selectedTab === id;
-        const cfg = STATE_CONFIG[id];
+      {statesList.map((st) => {
+        const isSelected = selectedState === st.name;
+        const styleInfo = STATUS_STYLE_MAP[st.name] ?? {
+          color: Colors.accent,
+          bg: 'rgba(142,68,173,0.12)',
+          icon: 'pricetag-outline',
+        };
         return (
           <TouchableOpacity
-            key={id}
+            key={st.id}
             activeOpacity={0.8}
-            onPress={() => onSelectTab(isActive ? 0 : id)}
             style={[
               neumorphicStyles.card,
               styles.statCard,
-              isActive && { borderColor: cfg.color, borderWidth: 1.5 },
+              isSelected && { borderColor: styleInfo.color, borderWidth: 2 },
             ]}
+            onPress={() => onSelectState(isSelected ? null : st.name)}
           >
-            <Ionicons name={icon} size={20} color={cfg.color} />
-            <Text style={[styles.statCount, { color: cfg.color }]}>{counts[id] ?? 0}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
+            <Ionicons name={styleInfo.icon} size={20} color={styleInfo.color} />
+            <Text style={[styles.statCount, { color: styleInfo.color }]}>
+              {counts[st.name] ?? 0}
+            </Text>
+            <Text style={styles.statLabel} numberOfLines={1}>
+              {st.name}
+            </Text>
           </TouchableOpacity>
         );
       })}
@@ -230,6 +221,8 @@ function CategoryTabsBar({
 
 export default function MisPublicacionesScreen() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [dbStates, setDbStates] = useState<{ id: number; name: string }[]>([]);
+  const [selectedState, setSelectedState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<number>(0); // 0 = Todos, 1 = Activos, 2 = Inactivos, 3 = Pendientes
@@ -243,10 +236,20 @@ export default function MisPublicacionesScreen() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
-      const data = await getMyProducts(user.id);
-      setProducts(data);
-    } catch {
-      // silent — show empty state
+
+      const [prodsData, statesRes] = await Promise.all([
+        getMyProducts(user.id),
+        getStates(),
+      ]);
+
+      setProducts(prodsData);
+      setDbStates(statesRes.length > 0 ? statesRes : [
+        { id: 1, name: 'Activo' },
+        { id: 2, name: 'Apartado' },
+        { id: 3, name: 'En espera' },
+      ]);
+    } catch (err: any) {
+      console.warn('Error al cargar publicaciones o estados:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -271,20 +274,9 @@ export default function MisPublicacionesScreen() {
     }, [handleBack]),
   );
 
-  const filteredProducts = useMemo(() => {
-    if (selectedTab === 0) return products;
-    return products.filter((p) => {
-      const sid = p.state_id ?? p.state?.id;
-      if (sid != null) return sid === selectedTab;
-      // fallback by name
-      if (selectedTab === 1) return p.state?.name === 'Activo';
-      if (selectedTab === 2) return p.state?.name === 'Inactivo';
-      if (selectedTab === 3) return p.state?.name === 'Pendiente';
-      return false;
-    });
-  }, [products, selectedTab]);
-
-  const activeTabLabel = CATEGORY_TABS.find((t) => t.id === selectedTab)?.label;
+  const filteredProducts = selectedState
+    ? products.filter((p) => (p.status ?? 'Activo').toLowerCase() === selectedState.toLowerCase())
+    : products;
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
@@ -317,21 +309,23 @@ export default function MisPublicacionesScreen() {
 
         {!loading && (
           <>
-            {/* Stats Bar */}
-            <StatsBar products={products} selectedTab={selectedTab} onSelectTab={setSelectedTab} />
+            <StatsBar
+              statesList={dbStates}
+              products={products}
+              selectedState={selectedState}
+              onSelectState={setSelectedState}
+            />
 
             {/* Section label */}
             <Text style={styles.sectionLabel}>
-              {filteredProducts.length}{' '}
-              {filteredProducts.length === 1 ? 'publicación' : 'publicaciones'}{' '}
-              {selectedTab !== 0 ? `(${activeTabLabel})` : ''}
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'publicación' : 'publicaciones'}
+              {selectedState ? ` (${selectedState})` : ''}
             </Text>
 
-            {/* Product List */}
             {filteredProducts.length > 0 ? (
               filteredProducts.map((p) => <ProductRow key={p.id} product={p} />)
             ) : (
-              <EmptyState categoryName={selectedTab !== 0 ? activeTabLabel : undefined} />
+              <EmptyState categoryName={selectedState ?? undefined} />
             )}
           </>
         )}

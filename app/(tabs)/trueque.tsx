@@ -1,5 +1,5 @@
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getProducts, Product, supabase } from '@/lib/supabase';
+import { getBarterProducts, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
+// ─── Product Card (Trueque) ───────────────────────────────────────────────────
 
 function ProductCard({ product }: { product: Product }) {
   const firstImage = product.images[0]?.url ?? null;
@@ -25,11 +25,10 @@ function ProductCard({ product }: { product: Product }) {
     <TouchableOpacity
       activeOpacity={0.88}
       style={styles.cardWrapper}
-      onPress={() => router.push(`/producto/${product.id}` as any)}
+      onPress={() => router.push(`/trueque-inteligente?id=${product.id}` as any)}
     >
       <View style={[neumorphicStyles.card, styles.productCard]}>
-
-        {/* Image area — always rendered, empty if no image */}
+        {/* Image area */}
         <View style={styles.imageBox}>
           {firstImage ? (
             <Image
@@ -48,25 +47,22 @@ function ProductCard({ product }: { product: Product }) {
             {product.title}
           </Text>
 
-          {product.category && (
-            <Text style={styles.category} numberOfLines={1}>
-              {product.category.name}
-            </Text>
-          )}
+          <Text style={styles.price}>
+            Est. ${product.price.toLocaleString('es-GT', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })} USD
+          </Text>
 
-          <View style={styles.priceColumn}>
-            <Text style={styles.price}>
-              C$ {product.price.toLocaleString('es-GT', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </Text>
-            {product.condition && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{product.condition.name}</Text>
-              </View>
-            )}
-          </View>
+          {/* Botón de Trueque */}
+          <TouchableOpacity
+            style={styles.barterBtn}
+            activeOpacity={0.85}
+            onPress={() => router.push(`/trueque-inteligente?id=${product.id}` as any)}
+          >
+            <Ionicons name="swap-horizontal" size={16} color={Colors.white} />
+            <Text style={styles.barterBtnText}>Trueque</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -75,7 +71,7 @@ function ProductCard({ product }: { product: Product }) {
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
-export default function InicioScreen() {
+export default function TruequeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,19 +82,18 @@ export default function InicioScreen() {
     else setLoading(true);
     setError(false);
     try {
-      const data = await getProducts();
-      let currentUserId: string | null = null;
+      const data = await getBarterProducts();
+      let userId: string | null = null;
       try {
         const { data: userData } = await supabase.auth.getUser();
-        currentUserId = userData?.user?.id ?? null;
+        userId = userData?.user?.id ?? null;
       } catch {
-        // silent
+        // Ignore auth error
       }
-      
- 
-      setProducts(data);
+      const otherUserProducts = userId ? data.filter((p) => p.user_id !== userId) : data;
+      setProducts(otherUserProducts);
     } catch (err: any) {
-      console.warn('Error fetching products:', err);
+      console.warn('Error fetching barter products:', err);
       setError(true);
     } finally {
       setLoading(false);
@@ -106,14 +101,12 @@ export default function InicioScreen() {
     }
   }
 
-  // Refetch every time the tab comes into focus & handle Android back button to prevent returning to auth/login
   useFocusEffect(
     useCallback(() => {
       fetchProducts();
 
       const onBackPress = () => {
-        // We are at root (Inicio tab), so prevent going back to auth screens
-        return true; // Handle hardware back button by consuming event
+        return true;
       };
 
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
@@ -141,32 +134,26 @@ export default function InicioScreen() {
           />
         }
       >
-        {/* Top bar */}
+        {/* Header / Search bar */}
         <View style={styles.topBar}>
-          <View>
-            <Text style={styles.greeting}>Bienvenido</Text>
-            <Text style={[neumorphicStyles.subtitle, { marginTop: 2 }]}>
-              Bienvenido a Liwa
-            </Text>
+          <View style={styles.headerTitleRow}>
+            {/* <Ionicons name="swap-horizontal" size={24} color={Colors.accent} /> */}
+            <Text style={styles.greeting}>Trueques</Text>
           </View>
-
-
         </View>
 
-        {/* Search bar */}
         <View style={[neumorphicStyles.inputContainer, styles.searchBar]}>
           <Ionicons name="search-outline" size={20} color={Colors.textSecondary} />
           <Text style={[neumorphicStyles.inputText, { color: Colors.textPlaceholder }]}>
-            Buscar productos…
+            Buscar productos de trueque…
           </Text>
         </View>
 
-        {/* Productos recientes */}
-        <Text style={[neumorphicStyles.label, { marginTop: 28, marginBottom: 14 }]}>
-          Productos recientes
+        <Text style={[neumorphicStyles.label, { marginTop: 20, marginBottom: 14 }]}>
+          Productos disponibles para trueque
         </Text>
 
-        {/* Loading (Loader integrado sin ocultar la interfaz superior) */}
+        {/* Loading */}
         {loading && (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={Colors.accent} />
@@ -186,9 +173,9 @@ export default function InicioScreen() {
         {/* Empty state */}
         {!loading && !error && products.length === 0 && (
           <View style={[neumorphicStyles.card, styles.feedbackCard]}>
-            <Ionicons name="cube-outline" size={40} color={Colors.textSecondary} />
+            <Ionicons name="swap-horizontal" size={40} color={Colors.textSecondary} />
             <Text style={[neumorphicStyles.subtitle, { textAlign: 'center', marginTop: 8 }]}>
-              Aún no hay productos.{'\n'}¡Sé el primero en publicar!
+              No hay productos con trueque activo.{'\n'}¡Sé el primero en ofrecer uno!
             </Text>
           </View>
         )}
@@ -201,7 +188,6 @@ export default function InicioScreen() {
                 <ProductCard product={product} />
               </View>
             ))}
-            {/* If odd product, fill second column with empty space */}
             {row.length === 1 && <View style={styles.col} />}
           </View>
         ))}
@@ -223,31 +209,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   greeting: {
     color: Colors.textPrimary,
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.3,
-  },
-  logoCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  logoText: {
-    color: Colors.white,
-    fontSize: 20,
-    fontWeight: '900',
   },
   searchBar: {
     marginBottom: 4,
@@ -260,7 +233,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 36,
   },
-  // Grid
   row: {
     flexDirection: 'row',
     gap: 12,
@@ -269,7 +241,6 @@ const styles = StyleSheet.create({
   col: {
     flex: 1,
   },
-  // Product card
   cardWrapper: {
     flex: 1,
   },
@@ -296,7 +267,7 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     padding: 10,
-    gap: 4,
+    gap: 6,
   },
   productTitle: {
     color: Colors.textPrimary,
@@ -304,49 +275,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 18,
   },
-  category: {
+  price: {
     color: Colors.textSecondary,
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  priceColumn: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  price: {
-    color: Colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  badge: {
-    backgroundColor: Colors.accent,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    color: Colors.white,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-  publishNavBtn: {
+  barterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    backgroundColor: Colors.accent,
     borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     gap: 6,
+    marginTop: 4,
   },
-  publishNavBtnText: {
+  barterBtnText: {
     color: Colors.white,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
 });
