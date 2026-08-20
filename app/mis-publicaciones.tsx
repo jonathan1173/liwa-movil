@@ -123,7 +123,6 @@ function EmptyState({ categoryName }: { categoryName?: string }) {
 // ─── Stats bar & Filter Cards ──────────────────────────────────────────────────
 
 function StatsBar({
-function StatsBar({
   statesList,
   products,
   selectedState,
