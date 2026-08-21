@@ -3,7 +3,7 @@ import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getBarterProducts, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -13,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -35,7 +36,9 @@ function ProductCard({ product }: { product: Product }) {
               resizeMode="cover"
             />
           ) : (
-            <View style={styles.imagePlaceholder} />
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="image-outline" size={32} color={Colors.textSecondary} />
+            </View>
           )}
         </View>
 
@@ -44,11 +47,17 @@ function ProductCard({ product }: { product: Product }) {
             {product.title}
           </Text>
 
+          {product.category && (
+            <Text style={styles.category} numberOfLines={1}>
+              {product.category.name}
+            </Text>
+          )}
+
           <Text style={styles.price}>
-            Est. ${product.price.toLocaleString('es-GT', {
+            Est. C$ {product.price.toLocaleString('es-GT', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
-            })} USD
+            })}
           </Text>
 
           <TouchableOpacity
@@ -67,6 +76,7 @@ function ProductCard({ product }: { product: Product }) {
 
 export default function TruequeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -108,13 +118,25 @@ export default function TruequeScreen() {
     }, []),
   );
 
+  // Filtrado de productos de trueque en tiempo real según la búsqueda
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    const query = searchQuery.toLowerCase().trim();
+    return products.filter((p) => {
+      const titleMatch = p.title.toLowerCase().includes(query);
+      const descMatch = p.description?.toLowerCase().includes(query);
+      const catMatch = p.category?.name.toLowerCase().includes(query);
+      return titleMatch || descMatch || catMatch;
+    });
+  }, [products, searchQuery]);
+
   const rows: Product[][] = [];
-  for (let i = 0; i < products.length; i += 2) {
-    rows.push(products.slice(i, i + 2));
+  for (let i = 0; i < filteredProducts.length; i += 2) {
+    rows.push(filteredProducts.slice(i, i + 2));
   }
 
   return (
-    <SafeAreaView style={neumorphicStyles.screen}>
+    <SafeAreaView style={[neumorphicStyles.screen, styles.screenBg]}>
       <AppHeader title="Trueques" showBack={true} />
 
       <ScrollView
@@ -124,46 +146,66 @@ export default function TruequeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => fetchProducts(true)}
-            tintColor={Colors.accent}
-            colors={[Colors.accent]}
+            tintColor={Colors.magenta}
+            colors={[Colors.magenta]}
           />
         }
       >
-        <View style={[neumorphicStyles.inputContainer, styles.searchBar]}>
-          <Ionicons name="search-outline" size={20} color={Colors.textSecondary} />
-          <Text style={[neumorphicStyles.inputText, { color: Colors.textPlaceholder }]}>
-            Buscar productos de trueque…
-          </Text>
+        {/* Barra de Búsqueda Funcional */}
+        <View style={styles.searchBarContainer}>
+          <Ionicons name="search-outline" size={20} color={Colors.magenta} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar productos de trueque…"
+            placeholderTextColor={Colors.textPlaceholder}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+              <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <Text style={[neumorphicStyles.label, { marginTop: 20, marginBottom: 14 }]}>
-          Productos disponibles para trueque
-        </Text>
+        {/* Encabezado de la sección */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Productos Disponibles</Text>
+          <Text style={styles.resultCount}>{filteredProducts.length} disponibles</Text>
+        </View>
 
+        {/* Carga */}
         {loading && (
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color={Colors.accent} />
+            <ActivityIndicator size="large" color={Colors.magenta} />
           </View>
         )}
 
+        {/* Error */}
         {!loading && error && (
-          <View style={[neumorphicStyles.card, styles.feedbackCard]}>
-            <Ionicons name="wifi-outline" size={36} color={Colors.textSecondary} />
-            <Text style={[neumorphicStyles.subtitle, { textAlign: 'center', marginTop: 8 }]}>
+          <View style={styles.feedbackCard}>
+            <Ionicons name="wifi-outline" size={40} color={Colors.magenta} />
+            <Text style={styles.feedbackText}>
               No se pudo cargar.{'\n'}Desliza hacia abajo para reintentar.
             </Text>
           </View>
         )}
 
-        {!loading && !error && products.length === 0 && (
-          <View style={[neumorphicStyles.card, styles.feedbackCard]}>
-            <Ionicons name="swap-horizontal" size={40} color={Colors.textSecondary} />
-            <Text style={[neumorphicStyles.subtitle, { textAlign: 'center', marginTop: 8 }]}>
-              No hay productos con trueque activo.{'\n'}¡Sé el primero en ofrecer uno!
+        {/* Sin resultados */}
+        {!loading && !error && filteredProducts.length === 0 && (
+          <View style={styles.feedbackCard}>
+            <Ionicons name="swap-horizontal-outline" size={44} color={Colors.purple} />
+            <Text style={styles.feedbackText}>
+              {searchQuery.trim()
+                ? `No se encontraron trueques para "${searchQuery}"`
+                : 'No hay productos con trueque activo.\n¡Sé el primero en ofrecer uno!'}
             </Text>
           </View>
         )}
 
+        {/* Grid de Productos */}
         {!loading && !error && rows.map((row, rowIdx) => (
           <View key={rowIdx} style={styles.row}>
             {row.map((product) => (
@@ -179,17 +221,53 @@ export default function TruequeScreen() {
   );
 }
 
-const CARD_IMAGE_HEIGHT = 130;
+const CARD_IMAGE_HEIGHT = 135;
 
 const styles = StyleSheet.create({
+  screenBg: {
+    backgroundColor: Colors.white,
+  },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 48,
   },
-  searchBar: {
-    marginBottom: 4,
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F7FA',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: '#EFEFEF',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    color: Colors.darkGray,
+    fontSize: 15,
+    marginLeft: 10,
+  },
+  clearBtn: {
+    padding: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.purple,
+  },
+  resultCount: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.green,
   },
   centered: {
     paddingVertical: 48,
@@ -197,12 +275,25 @@ const styles = StyleSheet.create({
   },
   feedbackCard: {
     alignItems: 'center',
-    paddingVertical: 36,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    backgroundColor: '#FBFBFB',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+  },
+  feedbackText: {
+    textAlign: 'center',
+    marginTop: 12,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    lineHeight: 20,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
+    gap: 14,
+    marginBottom: 14,
   },
   col: {
     flex: 1,
@@ -211,14 +302,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productCard: {
+    backgroundColor: Colors.white,
     padding: 0,
     overflow: 'hidden',
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
   imageBox: {
     width: '100%',
     height: CARD_IMAGE_HEIGHT,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F9F9F9',
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     overflow: 'hidden',
@@ -229,28 +328,35 @@ const styles = StyleSheet.create({
   },
   imagePlaceholder: {
     flex: 1,
-    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
   },
   cardBody: {
-    padding: 10,
+    padding: 12,
     gap: 6,
   },
   productTitle: {
-    color: Colors.textPrimary,
-    fontSize: 13,
+    color: Colors.darkGray,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 18,
+    lineHeight: 19,
   },
-  price: {
-    color: Colors.textSecondary,
+  category: {
+    color: Colors.purple,
     fontSize: 11,
     fontWeight: '600',
+  },
+  price: {
+    color: Colors.magenta,
+    fontSize: 13,
+    fontWeight: '700',
   },
   barterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.green,
     borderRadius: 12,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -260,6 +366,6 @@ const styles = StyleSheet.create({
   barterBtnText: {
     color: Colors.white,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

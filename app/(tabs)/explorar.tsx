@@ -59,11 +59,11 @@ function ProductCard({ product }: { product: Product }) {
                 maximumFractionDigits: 2,
               })}
             </Text>
-            {product.condition && (
+            {/* {product.condition && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{product.condition.name}</Text>
               </View>
-            )}
+            )} */}
           </View>
         </View>
       </View>
