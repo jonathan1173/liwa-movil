@@ -2,18 +2,22 @@ import { StyleSheet } from 'react-native';
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 export const Colors = {
-  background: '#E0E5EC',
+  background: '#FFFFFF',
   shadowLight: '#FFFFFF',
-  shadowDark: '#A3B1C6',
-  textPrimary: '#1A1A2E',
+  shadowDark: '#E0E0E0',
+  textPrimary: '#2C2C2C',
   textSecondary: '#6B7280',
   textPlaceholder: '#9CA3AF',
-  accent: '#1A1A2E',
-  accentLight: '#374151',
-  error: '#4B5563',
+  accent: '#EC006C', // Magenta Liwa
+  magenta: '#EC006C',
+  darkGray: '#2C2C2C',
+  purple: '#4A198C',
+  green: '#7AAF00',
+  accentLight: '#FCE4EC',
+  error: '#EC006C',
   white: '#FFFFFF',
-  inputBg: '#E0E5EC',
-  borderLight: 'rgba(255,255,255,0.8)',
+  inputBg: '#F5F5F7',
+  borderLight: '#E5E7EB',
 } as const;
 
 // ─── Shadow presets ───────────────────────────────────────────────────────────

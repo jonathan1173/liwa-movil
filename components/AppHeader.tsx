@@ -39,7 +39,7 @@ export default function AppHeader({
           </TouchableOpacity>
         ) : (
           <Image
-            source={require('@/assets/images/liwa_color.png')}
+            source={require('@/assets/images/liwa_nombre.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
