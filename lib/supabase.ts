@@ -497,11 +497,8 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
         id,
         title,
         price,
-<<<<<<< HEAD
         state_id,
         state:state_id ( id, name ),
-=======
->>>>>>> product
         category:category_id ( name ),
         condition:condition_id ( name ),
         images:product_image ( url )
@@ -512,26 +509,28 @@ export async function getFavorites(userId: string): Promise<FavoriteProduct[]> {
 
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    favoriteId: row.id,
-    id: row.product.id,
-    title: row.product.title,
-    price: row.product.price,
-    state_id: row.product.state_id,
-    state: Array.isArray(row.product.state)
-      ? (row.product.state[0] ?? null)
-      : row.product.state ?? null,
-    status: row.product.state?.name ?? 'Activo',
-    category: Array.isArray(row.product.category)
-      ? (row.product.category[0] ?? null)
-      : row.product.category ?? null,
-    condition: Array.isArray(row.product.condition)
-      ? (row.product.condition[0] ?? null)
-      : row.product.condition ?? null,
-    images: (row.product.images ?? []).sort(
-      (a: any, b: any) => a.display_order - b.display_order,
-    ),
-  }));
+  return (data ?? [])
+    .filter((row: any) => row.product != null)
+    .map((row: any) => {
+      const prod = row.product;
+      const stateObj = Array.isArray(prod.state) ? (prod.state[0] ?? null) : (prod.state ?? null);
+      return {
+        favoriteId: row.id,
+        id: prod.id,
+        title: prod.title,
+        price: prod.price,
+        state_id: prod.state_id,
+        state: stateObj,
+        status: stateObj?.name ?? 'Activo',
+        category: Array.isArray(prod.category)
+          ? (prod.category[0] ?? null)
+          : prod.category ?? null,
+        condition: Array.isArray(prod.condition)
+          ? (prod.condition[0] ?? null)
+          : prod.condition ?? null,
+        images: formatProductImages(prod.images),
+      };
+    });
 }
 
 /** Verifica si un producto ya está en favoritos del usuario */
@@ -673,12 +672,27 @@ export async function getNotifications(userId: string): Promise<NotificationItem
 
   if (propError) console.warn('Error fetching barter proposals:', propError);
 
+  const BARTER_STATE_MAP: Record<number, string> = {
+    1: 'Pendiente',
+    2: 'Aceptado',
+    3: 'Rechazado',
+  };
+
   const items: NotificationItem[] = [];
 
   // Convertir propuestas recibidas en items de notificación si no están en la tabla notification
   (proposals ?? []).forEach((prop: any) => {
     const senderName = prop.sender?.full_name ?? 'Alguien';
     const targetTitle = prop.target_product?.title ?? 'tu producto';
+    const bStateObj = Array.isArray(prop.barter_state) ? (prop.barter_state[0] ?? null) : (prop.barter_state ?? null);
+    const bStateName = bStateObj?.name ?? (prop.state_id ? BARTER_STATE_MAP[prop.state_id] : null) ?? 'Pendiente';
+
+    const normalizedProposal = {
+      ...prop,
+      state_id: prop.state_id,
+      barter_state: bStateObj ?? { id: prop.state_id ?? 1, name: bStateName },
+    };
+
     items.push({
       id: prop.id, // ID virtual usando el id de la propuesta
       user_id: userId,
@@ -688,7 +702,7 @@ export async function getNotifications(userId: string): Promise<NotificationItem
       created_at: prop.created_at,
       proposal_id: prop.id,
       sender: prop.sender,
-      proposal: prop,
+      proposal: normalizedProposal,
     });
   });
 
@@ -730,7 +744,7 @@ export async function getBarterProposalById(proposalId: number) {
 }
 
 export async function updateBarterProposalStatus(proposalId: number, status: 'accepted' | 'rejected') {
-  // 1. Obtener todos los barter_state para encontrar el ID del estado según el nombre
+  // 1. Asignar el ID de estado directamente (1 = Pendiente, 2 = Aceptado, 3 = Rechazado)
   let targetStateId = status === 'accepted' ? 2 : 3;
 
   try {
@@ -742,12 +756,12 @@ export async function updateBarterProposalStatus(proposalId: number, status: 'ac
     if (states && states.length > 0) {
       if (status === 'accepted') {
         const found = states.find((s) =>
-          s.name.toLowerCase().includes('aceptad') || s.name.toLowerCase().includes('aceptar') || s.name.toLowerCase().includes('completad')
+          s.id === 2 || s.name.toLowerCase().includes('aceptad') || s.name.toLowerCase().includes('aceptar')
         );
         if (found) targetStateId = found.id;
       } else {
         const found = states.find((s) =>
-          s.name.toLowerCase().includes('rechazad') || s.name.toLowerCase().includes('cancelad')
+          s.id === 3 || s.name.toLowerCase().includes('rechazad') || s.name.toLowerCase().includes('cancelad')
         );
         if (found) targetStateId = found.id;
       }
@@ -766,7 +780,7 @@ export async function updateBarterProposalStatus(proposalId: number, status: 'ac
 
   if (error) throw error;
 
-  // 3. Si fue aceptado, cambiar el state_id de la publicación del producto destino a 2
+  // 3. Si fue aceptado, cambiar el state_id de la publicación del producto destino a 2 (Apartado)
   if (status === 'accepted' && updatedProposal?.target_product_id) {
     const { error: prodErr } = await supabase
       .from('product')

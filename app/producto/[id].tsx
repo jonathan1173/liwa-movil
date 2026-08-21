@@ -97,11 +97,11 @@ function ImageCarousel({ images }: { images: { url: string }[] }) {
 function SellerCard({ name }: { name: string | null }) {
   const initials = name
     ? name
-        .split(' ')
-        .slice(0, 2)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
     : '?';
 
   return (
@@ -279,7 +279,7 @@ export default function ProductoDetailScreen() {
     <SafeAreaView style={neumorphicStyles.screen}>
 
       {/* ── Header ──────────────────────────────────────────────────── */}
-      <View style={[styles.header, { paddingTop: insets.top  }]}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity
           style={styles.headerBtn}
           onPress={handleBack}
@@ -288,18 +288,18 @@ export default function ProductoDetailScreen() {
           <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
 
-     
+
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {/* Botón de Trueque (a la izquierda de favoritos) */}
 
-          {product?.barter && !isOwner &&  (
+          {product?.barter && !isOwner && (
             <TouchableOpacity
               style={styles.headerBtn}
               onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
               activeOpacity={0.85}
             >
-              <Ionicons name="swap-horizontal"   size={22} color={Colors.accent} />
+              <Ionicons name="swap-horizontal" size={22} color={Colors.accent} />
             </TouchableOpacity>
           )}
 
@@ -409,7 +409,8 @@ export default function ProductoDetailScreen() {
             <View style={{ gap: 10, marginTop: 4 }}>
               {product?.barter && (
                 <TouchableOpacity
-                  style={[neumorphicStyles.button, { backgroundColor: '#8e44ad' }]}
+
+                  style={[neumorphicStyles.button, styles.contactBtn, { backgroundColor: '#8e44ad' }]}
                   activeOpacity={0.85}
                   onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
                 >

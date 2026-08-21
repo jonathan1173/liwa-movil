@@ -89,14 +89,17 @@ export default function NotificacionesScreen() {
       statusIconName = 'checkmark-circle';
       statusBgColor = 'rgba(39, 174, 96, 0.15)';
       statusIconColor = '#27ae60';
+      statusLabel = 'Aceptado';
     } else if (isRejected) {
       statusIconName = 'close-circle';
       statusBgColor = 'rgba(192, 57, 43, 0.15)';
       statusIconColor = '#c0392b';
+      statusLabel = 'Rechazado';
     } else {
       statusIconName = 'time-outline';
       statusBgColor = 'rgba(243, 156, 18, 0.15)';
       statusIconColor = '#f39c12';
+      statusLabel = 'Pendiente';
     }
 
     return (
