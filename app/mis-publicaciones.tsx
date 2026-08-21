@@ -2,7 +2,7 @@ import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getMyProducts, getStates, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -41,6 +41,8 @@ function StatusBadge({ status }: { status?: string }) {
 
 // ─── Product Row Card ─────────────────────────────────────────────────────────
 
+// ─── Product Row Card ─────────────────────────────────────────────────────────
+
 function ProductRow({ product }: { product: Product }) {
   const firstImage = product.images[0]?.url ?? null;
 
@@ -73,7 +75,6 @@ function ProductRow({ product }: { product: Product }) {
                 {product.category.name}
               </Text>
             )}
-            <StatusBadge status={product.status} />
           </View>
 
           <Text style={styles.rowPrice}>
@@ -85,8 +86,8 @@ function ProductRow({ product }: { product: Product }) {
           </Text>
         </View>
 
-        {/* Chevron */}
-        <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} style={styles.chevron} />
+        {/* Status Badge in place of Chevron */}
+        <StatusBadge status={product.status} />
       </View>
     </TouchableOpacity>
   );
@@ -94,19 +95,15 @@ function ProductRow({ product }: { product: Product }) {
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyState({ categoryName }: { categoryName?: string }) {
+function EmptyState() {
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconCircle}>
         <Ionicons name="storefront-outline" size={40} color={Colors.accent} />
       </View>
-      <Text style={styles.emptyTitle}>
-        {categoryName ? `Sin publicaciones ${categoryName}` : 'Sin publicaciones'}
-      </Text>
+      <Text style={styles.emptyTitle}>Sin publicaciones</Text>
       <Text style={styles.emptySubtitle}>
-        {categoryName
-          ? `No tienes productos en la categoría "${categoryName}".`
-          : 'Aún no has publicado ningún producto.\n¡Empieza a vender ahora!'}
+        {'Aún no has publicado ningún producto.\n¡Empieza a vender ahora!'}
       </Text>
       <TouchableOpacity
         style={[neumorphicStyles.button, styles.publishBtn]}
@@ -120,111 +117,12 @@ function EmptyState({ categoryName }: { categoryName?: string }) {
   );
 }
 
-// ─── Stats bar & Filter Cards ──────────────────────────────────────────────────
-
-function StatsBar({
-  statesList,
-  products,
-  selectedState,
-  onSelectState,
-}: {
-  statesList: { id: number; name: string }[];
-  products: Product[];
-  selectedState: string | null;
-  onSelectState: (stateName: string | null) => void;
-}) {
-  const counts = products.reduce<Record<string, number>>((acc, p) => {
-    const key = p.status ?? 'Activo';
-    return { ...acc, [key]: (acc[key] ?? 0) + 1 };
-  }, {});
-
-  return (
-    <View style={styles.statsRow}>
-      {statesList.map((st) => {
-        const isSelected = selectedState === st.name;
-        const styleInfo = STATUS_STYLE_MAP[st.name] ?? {
-          color: Colors.accent,
-          bg: 'rgba(142,68,173,0.12)',
-          icon: 'pricetag-outline',
-        };
-        return (
-          <TouchableOpacity
-            key={st.id}
-            activeOpacity={0.8}
-            style={[
-              neumorphicStyles.card,
-              styles.statCard,
-              isSelected && { borderColor: styleInfo.color, borderWidth: 2 },
-            ]}
-            onPress={() => onSelectState(isSelected ? null : st.name)}
-          >
-            <Ionicons name={styleInfo.icon} size={20} color={styleInfo.color} />
-            <Text style={[styles.statCount, { color: styleInfo.color }]}>
-              {counts[st.name] ?? 0}
-            </Text>
-            <Text style={styles.statLabel} numberOfLines={1}>
-              {st.name}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
-// ─── Category Tabs ───────────────────────────────────────────────────────────
-
-const CATEGORY_TABS = [
-  { id: 0, label: 'Todos' },
-  { id: 1, label: 'Activos' },
-  { id: 2, label: 'Inactivos' },
-  { id: 3, label: 'Pendientes' },
-];
-
-function CategoryTabsBar({
-  selectedTab,
-  onSelectTab,
-}: {
-  selectedTab: number;
-  onSelectTab: (id: number) => void;
-}) {
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.tabsContainer}
-    >
-      {CATEGORY_TABS.map((tab) => {
-        const isSelected = selectedTab === tab.id;
-        return (
-          <TouchableOpacity
-            key={tab.id}
-            onPress={() => onSelectTab(tab.id)}
-            activeOpacity={0.8}
-            style={[
-              styles.tabPill,
-              isSelected && styles.tabPillActive,
-            ]}
-          >
-            <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  );
-}
-
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function MisPublicacionesScreen() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [dbStates, setDbStates] = useState<{ id: number; name: string }[]>([]);
-  const [selectedState, setSelectedState] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<number>(0); // 0 = Todos, 1 = Activos, 2 = Inactivos, 3 = Pendientes
 
   async function fetchProducts(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
@@ -236,19 +134,10 @@ export default function MisPublicacionesScreen() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [prodsData, statesRes] = await Promise.all([
-        getMyProducts(user.id),
-        getStates(),
-      ]);
-
+      const prodsData = await getMyProducts(user.id);
       setProducts(prodsData);
-      setDbStates(statesRes.length > 0 ? statesRes : [
-        { id: 1, name: 'Activo' },
-        { id: 2, name: 'Apartado' },
-        { id: 3, name: 'En espera' },
-      ]);
     } catch (err: any) {
-      console.warn('Error al cargar publicaciones o estados:', err);
+      console.warn('Error al cargar publicaciones:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -273,10 +162,6 @@ export default function MisPublicacionesScreen() {
     }, [handleBack]),
   );
 
-  const filteredProducts = selectedState
-    ? products.filter((p) => (p.status ?? 'Activo').toLowerCase() === selectedState.toLowerCase())
-    : products;
-
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
       <ScrollView
@@ -296,7 +181,7 @@ export default function MisPublicacionesScreen() {
           <TouchableOpacity style={styles.backCircle} onPress={handleBack} activeOpacity={0.85}>
             <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={[neumorphicStyles.title, styles.pageTitle]}>Mis Ventas</Text>
+          <Text style={[neumorphicStyles.title, styles.pageTitle]}>Mis Publicaciones</Text>
         </View>
 
         {/* Loading */}
@@ -308,23 +193,15 @@ export default function MisPublicacionesScreen() {
 
         {!loading && (
           <>
-            <StatsBar
-              statesList={dbStates}
-              products={products}
-              selectedState={selectedState}
-              onSelectState={setSelectedState}
-            />
-
             {/* Section label */}
             <Text style={styles.sectionLabel}>
-              {filteredProducts.length} {filteredProducts.length === 1 ? 'publicación' : 'publicaciones'}
-              {selectedState ? ` (${selectedState})` : ''}
+              {products.length} {products.length === 1 ? 'publicación' : 'publicaciones'}
             </Text>
 
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((p) => <ProductRow key={p.id} product={p} />)
+            {products.length > 0 ? (
+              products.map((p) => <ProductRow key={p.id} product={p} />)
             ) : (
-              <EmptyState categoryName={selectedState ?? undefined} />
+              <EmptyState />
             )}
           </>
         )}

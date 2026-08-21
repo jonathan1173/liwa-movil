@@ -260,11 +260,11 @@ export default function EditarProductoScreen() {
       return match ?? prev;
     });
     setStatus((prev) => {
-      if (!prev) return states[0] ?? { id: 1, name: 'Activo' };
+      if (!prev) return states[0] ?? null;
       const match = states.find((s) => s.id === prev.id || s.name.toLowerCase() === prev.name.toLowerCase());
       return match ?? prev;
     });
-  }, [loadingCatalogs, loadingProduct]);
+  }, [loadingCatalogs, loadingProduct, states]);
 
   const pickImage = useCallback(async (slotIndex: number) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -347,7 +347,7 @@ export default function EditarProductoScreen() {
         barter: barterOption.name === 'Sí',
         category_id: category?.id && category.id !== 0 ? category.id : null,
         condition_id: condition?.id && condition.id !== 0 ? condition.id : null,
-        state_id: status?.id && status.id !== 0 ? status.id : 1,
+        state_id: status?.id && status.id !== 0 ? status.id : undefined,
       });
 
       setSaveProgress('Actualizando fotos…');

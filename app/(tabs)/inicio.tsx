@@ -145,9 +145,9 @@ export default function InicioScreen() {
         <View style={styles.topBar}>
           <View>
             <Text style={styles.greeting}>Bienvenido</Text>
-            <Text style={[neumorphicStyles.subtitle, { marginTop: 2 }]}>
+            {/* <Text style={[neumorphicStyles.subtitle, { marginTop: 2 }]}>
               Bienvenido a Liwa
-            </Text>
+            </Text> */}
           </View>
 
 

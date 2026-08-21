@@ -220,15 +220,25 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
 
   if (error) throw error;
 
-  return (data ?? []).map((p: any) => ({
-    ...p,
-    state: Array.isArray(p.state) ? (p.state[0] ?? null) : (p.state ?? null),
-    category: Array.isArray(p.category) ? (p.category[0] ?? null) : (p.category ?? null),
-    condition: Array.isArray(p.condition) ? (p.condition[0] ?? null) : (p.condition ?? null),
-    status: p.state?.name ?? 'Activo',
-    barter: p.barter ?? true,
-    images: formatProductImages(p.images),
-  }));
+  const STATE_NAME_MAP: Record<number, string> = {
+    1: 'Activo',
+    2: 'Apartado',
+    3: 'En espera',
+  };
+
+  return (data ?? []).map((p: any) => {
+    const stateObj = Array.isArray(p.state) ? (p.state[0] ?? null) : (p.state ?? null);
+    const statusName = stateObj?.name ?? (p.state_id ? STATE_NAME_MAP[p.state_id] : null) ?? 'Activo';
+    return {
+      ...p,
+      state: stateObj ?? (p.state_id ? { id: p.state_id, name: statusName } : null),
+      category: Array.isArray(p.category) ? (p.category[0] ?? null) : (p.category ?? null),
+      condition: Array.isArray(p.condition) ? (p.condition[0] ?? null) : (p.condition ?? null),
+      status: statusName,
+      barter: p.barter ?? true,
+      images: formatProductImages(p.images),
+    };
+  });
 }
 
 // ─── Product Detail ────────────────────────────────────────────────────────────
@@ -261,9 +271,14 @@ export async function getProductById(id: number): Promise<ProductDetail> {
 
   if (error) throw error;
 
+  const stateObj = Array.isArray((data as any).state)
+    ? ((data as any).state[0] ?? null)
+    : (data as any).state ?? null;
+
   return {
     ...data,
-    status: (data as any).state?.name ?? 'Activo',
+    state: stateObj,
+    status: stateObj?.name ?? 'Activo',
     barter: (data as any).barter ?? true,
     category: Array.isArray((data as any).category)
       ? ((data as any).category[0] ?? null)
@@ -271,9 +286,6 @@ export async function getProductById(id: number): Promise<ProductDetail> {
     condition: Array.isArray((data as any).condition)
       ? ((data as any).condition[0] ?? null)
       : (data as any).condition ?? null,
-    state: Array.isArray((data as any).state)
-      ? ((data as any).state[0] ?? null)
-      : (data as any).state ?? null,
     images: formatProductImages((data as any).images),
     seller: (data as any).seller ?? null,
   } as ProductDetail;
@@ -304,7 +316,7 @@ export async function updateProductDetails(
     category_id: input.category_id,
     condition_id: input.condition_id,
   };
-  if (input.state_id !== undefined && input.state_id !== null) {
+  if (input.state_id !== undefined) {
     updateData.state_id = input.state_id;
   }
 
