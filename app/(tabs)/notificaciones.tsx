@@ -1,3 +1,4 @@
+import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getNotifications, markNotificationRead, NotificationItem, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -67,7 +68,6 @@ export default function NotificacionesScreen() {
     }
 
     if (item.proposal_id) {
-      // Navegar a los detalles de la oferta de trueque enviada
       router.push(`/trueque-inteligente?proposal_id=${item.proposal_id}` as any);
     }
   }
@@ -108,7 +108,6 @@ export default function NotificacionesScreen() {
         onPress={() => handleNotificationPress(item)}
         activeOpacity={0.88}
       >
-        {/* Top: Avatar, texto y badge no leído */}
         <View style={styles.topRow}>
           {senderPhoto ? (
             <Image source={{ uri: senderPhoto }} style={styles.avatar} resizeMode="cover" />
@@ -129,7 +128,6 @@ export default function NotificacionesScreen() {
           </View>
         </View>
 
-        {/* Bottom Box: Estado del trueque + Botón Revisar oferta */}
         <View style={styles.offerPreviewBox}>
           <View style={styles.miniImagesRow}>
             <View style={[styles.barterIconContainer, { backgroundColor: statusBgColor }]}>
@@ -155,10 +153,9 @@ export default function NotificacionesScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <View style={styles.container}>
-        {/* Title */}
-        <Text style={styles.pageTitle}>Notificaciones</Text>
+      <AppHeader title="Notificaciones" showBack={true} onBackPress={handleBack} />
 
+      <View style={styles.container}>
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={Colors.accent} />
@@ -198,12 +195,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 28,
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 20,
+    paddingTop: 16,
   },
   centered: {
     flex: 1,
@@ -254,13 +246,6 @@ const styles = StyleSheet.create({
   timeText: {
     color: Colors.textSecondary,
     fontSize: 11,
-    marginTop: 4,
-  },
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#d63031',
     marginTop: 4,
   },
   offerPreviewBox: {

@@ -1,3 +1,4 @@
+import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { signOut, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,7 +42,7 @@ export default function PerfilScreen() {
         if (error) throw error;
         setProfile(data);
       } catch {
-        // silent — profile might not exist yet
+        // silent
       } finally {
         setLoading(false);
       }
@@ -90,13 +91,12 @@ export default function PerfilScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
+      <AppHeader title="Perfil" showBack={true} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <Text style={[neumorphicStyles.title, styles.pageTitle]}>Perfil</Text>
-
         {loading ? (
           <ActivityIndicator
             size="large"
@@ -124,7 +124,6 @@ export default function PerfilScreen() {
                 Información
               </Text>
 
-              {/* Email row */}
               <View style={styles.infoRow}>
                 <View style={styles.infoIconBox}>
                   <Ionicons name="mail-outline" size={18} color={Colors.textPrimary} />
@@ -137,7 +136,6 @@ export default function PerfilScreen() {
 
               <View style={styles.separator} />
 
-              {/* Phone row */}
               <View style={styles.infoRow}>
                 <View style={styles.infoIconBox}>
                   <Ionicons name="call-outline" size={18} color={Colors.textPrimary} />
@@ -195,7 +193,6 @@ export default function PerfilScreen() {
               </View>
             </View>
 
-
             {/* Sign out */}
             <TouchableOpacity
               style={[neumorphicStyles.buttonOutline, styles.signOutBtn]}
@@ -222,13 +219,9 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 16,
     paddingBottom: 48,
   },
-  pageTitle: {
-    marginBottom: 24,
-  },
-  // Avatar
   avatarSection: {
     alignItems: 'center',
     marginBottom: 28,
@@ -265,7 +258,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 4,
   },
-  // Info card
   infoCard: {
     marginBottom: 16,
   },
@@ -309,7 +301,6 @@ const styles = StyleSheet.create({
     opacity: 0.2,
     marginVertical: 14,
   },
-  // Actions
   actionsCard: {
     marginBottom: 16,
   },
@@ -334,31 +325,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  // Banner
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 24,
-  },
-  bannerIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bannerText: {
-    flex: 1,
-  },
-  bannerTitle: {
-    color: Colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  // Sign out
   signOutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

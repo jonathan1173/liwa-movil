@@ -1,12 +1,11 @@
 import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getBarterProducts, Product, supabase } from '@/lib/supabase';
+import { getProducts, Product } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  BackHandler,
   Image,
   RefreshControl,
   SafeAreaView,
@@ -24,7 +23,7 @@ function ProductCard({ product }: { product: Product }) {
     <TouchableOpacity
       activeOpacity={0.88}
       style={styles.cardWrapper}
-      onPress={() => router.push(`/trueque-inteligente?id=${product.id}` as any)}
+      onPress={() => router.push(`/producto/${product.id}` as any)}
     >
       <View style={[neumorphicStyles.card, styles.productCard]}>
         <View style={styles.imageBox}>
@@ -44,28 +43,32 @@ function ProductCard({ product }: { product: Product }) {
             {product.title}
           </Text>
 
-          <Text style={styles.price}>
-            Est. ${product.price.toLocaleString('es-GT', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })} USD
-          </Text>
+          {product.category && (
+            <Text style={styles.category} numberOfLines={1}>
+              {product.category.name}
+            </Text>
+          )}
 
-          <TouchableOpacity
-            style={styles.barterBtn}
-            activeOpacity={0.85}
-            onPress={() => router.push(`/trueque-inteligente?id=${product.id}` as any)}
-          >
-            <Ionicons name="swap-horizontal" size={16} color={Colors.white} />
-            <Text style={styles.barterBtnText}>Trueque</Text>
-          </TouchableOpacity>
+          <View style={styles.priceColumn}>
+            <Text style={styles.price}>
+              C$ {product.price.toLocaleString('es-GT', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+            {product.condition && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{product.condition.name}</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-export default function TruequeScreen() {
+export default function ExplorarScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,18 +79,10 @@ export default function TruequeScreen() {
     else setLoading(true);
     setError(false);
     try {
-      const data = await getBarterProducts();
-      let userId: string | null = null;
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        userId = userData?.user?.id ?? null;
-      } catch {
-        // Ignore auth error
-      }
-      const otherUserProducts = userId ? data.filter((p) => p.user_id !== userId) : data;
-      setProducts(otherUserProducts);
+      const data = await getProducts();
+      setProducts(data);
     } catch (err: any) {
-      console.warn('Error fetching barter products:', err);
+      console.warn('Error fetching products:', err);
       setError(true);
     } finally {
       setLoading(false);
@@ -98,14 +93,7 @@ export default function TruequeScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchProducts();
-
-      const onBackPress = () => {
-        return true;
-      };
-
-      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => subscription.remove();
-    }, []),
+    }, [])
   );
 
   const rows: Product[][] = [];
@@ -115,7 +103,7 @@ export default function TruequeScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Trueques" showBack={true} />
+      <AppHeader title="Explorar" showBack={true} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -129,15 +117,16 @@ export default function TruequeScreen() {
           />
         }
       >
+        {/* Search bar */}
         <View style={[neumorphicStyles.inputContainer, styles.searchBar]}>
           <Ionicons name="search-outline" size={20} color={Colors.textSecondary} />
           <Text style={[neumorphicStyles.inputText, { color: Colors.textPlaceholder }]}>
-            Buscar productos de trueque…
+            Buscar productos y servicios…
           </Text>
         </View>
 
         <Text style={[neumorphicStyles.label, { marginTop: 20, marginBottom: 14 }]}>
-          Productos disponibles para trueque
+          Productos disponibles
         </Text>
 
         {loading && (
@@ -157,9 +146,9 @@ export default function TruequeScreen() {
 
         {!loading && !error && products.length === 0 && (
           <View style={[neumorphicStyles.card, styles.feedbackCard]}>
-            <Ionicons name="swap-horizontal" size={40} color={Colors.textSecondary} />
+            <Ionicons name="cube-outline" size={40} color={Colors.textSecondary} />
             <Text style={[neumorphicStyles.subtitle, { textAlign: 'center', marginTop: 8 }]}>
-              No hay productos con trueque activo.{'\n'}¡Sé el primero en ofrecer uno!
+              Aún no hay productos.{'\n'}¡Sé el primero en publicar!
             </Text>
           </View>
         )}
@@ -233,7 +222,7 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     padding: 10,
-    gap: 6,
+    gap: 4,
   },
   productTitle: {
     color: Colors.textPrimary,
@@ -241,25 +230,36 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 18,
   },
-  price: {
+  category: {
     color: Colors.textSecondary,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  barterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.accent,
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    gap: 6,
+  priceColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginTop: 4,
+    flexWrap: 'wrap',
+    gap: 4,
   },
-  barterBtnText: {
+  price: {
+    color: Colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  badge: {
+    backgroundColor: Colors.accent,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeText: {
     color: Colors.white,
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
 });

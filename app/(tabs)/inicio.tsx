@@ -1,13 +1,9 @@
+import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-import { getProducts, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { router } from 'expo-router';
+import React from 'react';
 import {
-  ActivityIndicator,
-  BackHandler,
-  Image,
-  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -16,337 +12,165 @@ import {
   View,
 } from 'react-native';
 
-// ─── Product Card ─────────────────────────────────────────────────────────────
-
-function ProductCard({ product }: { product: Product }) {
-  const firstImage = product.images[0]?.url ?? null;
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      style={styles.cardWrapper}
-      onPress={() => router.push(`/producto/${product.id}` as any)}
-    >
-      <View style={[neumorphicStyles.card, styles.productCard]}>
-
-        {/* Image area — always rendered, empty if no image */}
-        <View style={styles.imageBox}>
-          {firstImage ? (
-            <Image
-              source={{ uri: firstImage }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.imagePlaceholder} />
-          )}
-        </View>
-
-        {/* Info */}
-        <View style={styles.cardBody}>
-          <Text style={styles.productTitle} numberOfLines={2}>
-            {product.title}
-          </Text>
-
-          {product.category && (
-            <Text style={styles.category} numberOfLines={1}>
-              {product.category.name}
-            </Text>
-          )}
-
-          <View style={styles.priceColumn}>
-            <Text style={styles.price}>
-              C$ {product.price.toLocaleString('es-GT', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </Text>
-            {product.condition && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{product.condition.name}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// ─── Main screen ──────────────────────────────────────────────────────────────
-
 export default function InicioScreen() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(false);
-
-  async function fetchProducts(isRefresh = false) {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError(false);
-    try {
-      const data = await getProducts();
-      let currentUserId: string | null = null;
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        currentUserId = userData?.user?.id ?? null;
-      } catch {
-        // silent
-      }
-      
- 
-      setProducts(data);
-    } catch (err: any) {
-      console.warn('Error fetching products:', err);
-      setError(true);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
-
-  // Refetch every time the tab comes into focus & handle Android back button to prevent returning to auth/login
-  useFocusEffect(
-    useCallback(() => {
-      fetchProducts();
-
-      const onBackPress = () => {
-        // We are at root (Inicio tab), so prevent going back to auth screens
-        return true; // Handle hardware back button by consuming event
-      };
-
-      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => subscription.remove();
-    }, []),
-  );
-
-  // Pair products into rows of 2
-  const rows: Product[][] = [];
-  for (let i = 0; i < products.length; i += 2) {
-    rows.push(products.slice(i, i + 2));
-  }
-
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
+      {/* Header unificado */}
+      <AppHeader showNotif={true} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => fetchProducts(true)}
-            tintColor={Colors.accent}
-            colors={[Colors.accent]}
-          />
-        }
       >
-        {/* Top bar */}
-        <View style={styles.topBar}>
-          <View>
-            <Text style={styles.greeting}>Bienvenido</Text>
-            {/* <Text style={[neumorphicStyles.subtitle, { marginTop: 2 }]}>
-              Bienvenido a Liwa
-            </Text> */}
-          </View>
-
-
+        {/* Saludo principal */}
+        <View style={styles.greetingContainer}>
+          <Text style={styles.greetingTitle}>¡Hola!</Text>
+          <Text style={styles.greetingSubtitle}>¿En qué podemos ayudarte?</Text>
         </View>
 
-        {/* Search bar */}
-        <View style={[neumorphicStyles.inputContainer, styles.searchBar]}>
-          <Ionicons name="search-outline" size={20} color={Colors.textSecondary} />
-          <Text style={[neumorphicStyles.inputText, { color: Colors.textPlaceholder }]}>
-            Buscar productos…
-          </Text>
+        {/* Lista / Grid de Menú con Tarjetas */}
+        <View style={styles.menuContainer}>
+          {/* Tarjeta 1: Explorar */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#E91E63' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/explorar' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="bag-handle-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Explorar</Text>
+              <Text style={styles.cardSubtitle}>productos y servicios</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tarjeta 2: Publicar */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#2B2B2B' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/publicar' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="add-circle-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Publicar</Text>
+              <Text style={styles.cardSubtitle}>tu creación</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tarjeta 3: Trueque */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#7CB342' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/trueque' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="swap-horizontal-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Trueque</Text>
+              <Text style={styles.cardSubtitle}>intercambia productos</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tarjeta 4: Capacitaciones */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#5E2B97' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/capacitaciones' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="book-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Capacitaciones</Text>
+              <Text style={styles.cardSubtitle}>y recursos</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tarjeta 5: Comunidad */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#2b5397' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/comunidad' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="people-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Comunidad</Text>
+              <Text style={styles.cardSubtitle}>conecta y colabora</Text>
+            </View>
+          </TouchableOpacity>
         </View>
-
-        {/* Productos recientes */}
-        <Text style={[neumorphicStyles.label, { marginTop: 28, marginBottom: 14 }]}>
-          Productos recientes
-        </Text>
-
-        {/* Loading (Loader integrado sin ocultar la interfaz superior) */}
-        {loading && (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color={Colors.accent} />
-          </View>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
-          <View style={[neumorphicStyles.card, styles.feedbackCard]}>
-            <Ionicons name="wifi-outline" size={36} color={Colors.textSecondary} />
-            <Text style={[neumorphicStyles.subtitle, { textAlign: 'center', marginTop: 8 }]}>
-              No se pudo cargar.{'\n'}Desliza hacia abajo para reintentar.
-            </Text>
-          </View>
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && products.length === 0 && (
-          <View style={[neumorphicStyles.card, styles.feedbackCard]}>
-            <Ionicons name="cube-outline" size={40} color={Colors.textSecondary} />
-            <Text style={[neumorphicStyles.subtitle, { textAlign: 'center', marginTop: 8 }]}>
-              Aún no hay productos.{'\n'}¡Sé el primero en publicar!
-            </Text>
-          </View>
-        )}
-
-        {/* Product grid — 2 columns */}
-        {!loading && !error && rows.map((row, rowIdx) => (
-          <View key={rowIdx} style={styles.row}>
-            {row.map((product) => (
-              <View key={product.id} style={styles.col}>
-                <ProductCard product={product} />
-              </View>
-            ))}
-            {/* If odd product, fill second column with empty space */}
-            {row.length === 1 && <View style={styles.col} />}
-          </View>
-        ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const CARD_IMAGE_HEIGHT = 130;
-
 const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 48,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+  greetingContainer: {
+    marginBottom: 24,
   },
-  greeting: {
-    color: Colors.textPrimary,
-    fontSize: 22,
+  greetingTitle: {
+    fontSize: 26,
     fontWeight: '800',
-    letterSpacing: -0.3,
+    color: '#3B1E54',
+    letterSpacing: -0.5,
   },
-  logoCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.accent,
+  greetingSubtitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#3B1E54',
+    marginTop: 2,
+    letterSpacing: -0.4,
+  },
+  menuContainer: {
+    gap: 16,
+  },
+  menuCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  cardIconBox: {
+    width: 60,
+    height: 60,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
+    marginRight: 16,
   },
-  logoText: {
-    color: Colors.white,
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  searchBar: {
-    marginBottom: 4,
-  },
-  centered: {
-    paddingVertical: 48,
-    alignItems: 'center',
-  },
-  feedbackCard: {
-    alignItems: 'center',
-    paddingVertical: 36,
-  },
-  // Grid
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  col: {
+  cardTextBox: {
     flex: 1,
   },
-  // Product card
-  cardWrapper: {
-    flex: 1,
-  },
-  productCard: {
-    padding: 0,
-    overflow: 'hidden',
-    borderRadius: 18,
-  },
-  imageBox: {
-    width: '100%',
-    height: CARD_IMAGE_HEIGHT,
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  imagePlaceholder: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  cardBody: {
-    padding: 10,
-    gap: 4,
-  },
-  productTitle: {
-    color: Colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  category: {
-    color: Colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  priceColumn: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: 4,
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  price: {
-    color: Colors.textPrimary,
-    fontSize: 15,
+  cardTitle: {
+    fontSize: 22,
     fontWeight: '800',
+    color: Colors.white,
     letterSpacing: -0.3,
   },
-  badge: {
-    backgroundColor: Colors.accent,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  badgeText: {
-    color: Colors.white,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-  publishNavBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    gap: 6,
-  },
-  publishNavBtnText: {
-    color: Colors.white,
-    fontSize: 13,
-    fontWeight: '700',
+  cardSubtitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.95)',
+    marginTop: 2,
   },
 });

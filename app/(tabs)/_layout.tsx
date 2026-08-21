@@ -22,14 +22,6 @@ function TabIcon({
   );
 }
 
-function PublishTabIcon() {
-  return (
-    <View style={styles.publishFab}>
-      <Ionicons name="add" size={28} color={Colors.white} />
-    </View>
-  );
-}
-
 export default function TabLayout() {
   return (
     <Tabs
@@ -43,13 +35,17 @@ export default function TabLayout() {
           fontWeight: '600',
           letterSpacing: 0.3,
           marginBottom: 4,
+          textAlign: 'center',
+        },
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
         },
         tabBarStyle: {
           backgroundColor: Colors.background,
           borderTopWidth: 0,
           height: 70,
           paddingTop: 6,
-          // neumorphic top shadow
           shadowColor: Colors.shadowDark,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.2,
@@ -58,7 +54,6 @@ export default function TabLayout() {
         },
       }}
     >
-
       {/* ── Inicio ── */}
       <Tabs.Screen
         name="inicio"
@@ -70,35 +65,35 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ── Trueque ── */}
+      {/* ── Explorar ── */}
       <Tabs.Screen
-        name="trueque"
+        name="explorar"
         options={{
-          title: 'Trueque',
+          title: 'Explorar',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'swap-horizontal' : 'swap-horizontal-outline'} focused={focused} />
+            <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />
           ),
         }}
       />
 
-      {/* ── Publicar (centro) ── */}
+      {/* ── Publicar ── */}
       <Tabs.Screen
         name="publicar"
         options={{
-          title: '',
-          tabBarIcon: () => <PublishTabIcon />,
-          tabBarLabel: () => null,
-          tabBarStyle: { display: 'none' },
+          title: 'Publicar',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? 'add-circle' : 'add-circle-outline'} focused={focused} />
+          ),
         }}
       />
 
-      {/* ── Notificaciones ── */}
+      {/* ── Eventos ── */}
       <Tabs.Screen
-        name="notificaciones"
+        name="capacitaciones"
         options={{
-          title: 'Notificaciones',
+          title: 'Capacitaciones',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} />
+            <TabIcon name={focused ? 'calendar' : 'calendar-outline'} focused={focused} />
           ),
         }}
       />
@@ -114,7 +109,10 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Hidden legacy screens */}
+      {/* Hidden secondary screens */}
+      <Tabs.Screen name="notificaciones" options={{ href: null }} />
+      <Tabs.Screen name="comunidad" options={{ href: null }} />
+      <Tabs.Screen name="trueque" options={{ href: null }} />
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="two" options={{ href: null }} />
     </Tabs>
@@ -137,20 +135,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 5,
-  },
-  publishFab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    // Neumorphic elevation
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 10,
   },
 });

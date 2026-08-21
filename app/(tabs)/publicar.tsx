@@ -1,3 +1,4 @@
+import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import {
   addProductImage,
@@ -34,7 +35,6 @@ interface Option {
   name: string;
 }
 
-// ─── Mini Picker Component ───────────────────────────────────────────────────
 function PickerField({
   label,
   value,
@@ -98,7 +98,6 @@ function PickerField({
   );
 }
 
-// ─── Image Slot Component ───────────────────────────────────────────────────
 function ImageSlot({
   uri,
   index,
@@ -131,7 +130,6 @@ function ImageSlot({
   );
 }
 
-// ─── Main Publicar Screen ────────────────────────────────────────────────────
 const BARTER_OPTIONS: Option[] = [
   { id: 1, name: 'Sí' },
   { id: 2, name: 'No' },
@@ -142,7 +140,7 @@ export default function PublicarScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [barterOption, setBarterOption] = useState<Option>(BARTER_OPTIONS[0]); // Por defecto 'Sí' (true)
+  const [barterOption, setBarterOption] = useState<Option>(BARTER_OPTIONS[0]);
   const [category, setCategory] = useState<Option | null>(null);
   const [condition, setCondition] = useState<Option | null>(null);
 
@@ -165,7 +163,6 @@ export default function PublicarScreen() {
     }
   }, []);
 
-  // Reset form & handle back navigation every time the screen gains focus
   useFocusEffect(
     useCallback(() => {
       setImages([null, null, null, null]);
@@ -189,7 +186,6 @@ export default function PublicarScreen() {
     }, [handleBack]),
   );
 
-  // Load Categories & Conditions
   useEffect(() => {
     async function load() {
       try {
@@ -264,7 +260,6 @@ export default function PublicarScreen() {
     try {
       const filledImages = images.filter(Boolean) as string[];
 
-      // 1. Crear el producto
       setUploadProgress('Creando publicación…');
       const productId = await createProduct({
         title: title.trim(),
@@ -276,7 +271,6 @@ export default function PublicarScreen() {
         state_id: 1,
       });
 
-      // 2. Subir las imágenes
       const failedImages: number[] = [];
       for (let i = 0; i < filledImages.length; i++) {
         try {
@@ -289,7 +283,6 @@ export default function PublicarScreen() {
         }
       }
 
-      // 3. Volver a Inicio
       router.replace('/(tabs)/inicio' as any);
 
       if (failedImages.length > 0) {
@@ -311,6 +304,8 @@ export default function PublicarScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
+      <AppHeader title="Publicar" showBack={true} onBackPress={handleBack} />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -320,15 +315,6 @@ export default function PublicarScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.backCircle} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-            </TouchableOpacity>
-            <Text style={neumorphicStyles.title}>Nueva publicación</Text>
-            <View style={{ width: 42 }} />
-          </View>
-
           {/* Fotos */}
           <View style={[neumorphicStyles.card, styles.section]}>
             <Text style={[neumorphicStyles.label, { marginBottom: 12 }]}>
@@ -375,7 +361,7 @@ export default function PublicarScreen() {
 
             <View style={styles.gap} />
 
-            <Text style={neumorphicStyles.label}>Precio </Text>
+            <Text style={neumorphicStyles.label}>Precio</Text>
             <View style={[neumorphicStyles.inputContainer, priceError ? styles.inputErr : null]}>
               <Text style={styles.currency}>C$</Text>
               <TextInput
@@ -485,28 +471,9 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 28,
+    paddingTop: 16,
     paddingBottom: 48,
     gap: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  backCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
   },
   section: {
     marginHorizontal: 0,
