@@ -837,3 +837,268 @@ export async function markNotificationRead(notificationId: number): Promise<void
 
   if (error) throw error;
 }
+
+// ─── Community Helpers ────────────────────────────────────────────────────────
+
+export interface CommunityPost {
+  id: number;
+  user_id: string;
+  title: string;
+  content: string;
+  post_type: 'anuncio' | 'evento';
+  image_url: string | null;
+  city_id: number | null;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  author?: { full_name: string | null; username: string | null } | null;
+  city?: { name: string } | null;
+  is_liked_by_user?: boolean;
+}
+
+export interface CommunityComment {
+  id: number;
+  post_id: number;
+  user_id: string;
+  content: string;
+  created_at: string;
+  author?: { full_name: string | null; username: string | null } | null;
+}
+
+export async function uploadCommunityImage(imageUri: string): Promise<string> {
+  const fileExt = imageUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const filePath = `posts/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+  const response = await fetch(imageUri);
+  const blob = await response.arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from('community')
+    .upload(filePath, blob, {
+      contentType: `image/${fileExt === 'png' ? 'png' : 'jpeg'}`,
+      upsert: true,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data: urlData } = supabase.storage
+    .from('community')
+    .getPublicUrl(filePath);
+
+  return urlData.publicUrl;
+}
+
+export interface CreateCommunityPostInput {
+  title: string;
+  content: string;
+  post_type: 'anuncio' | 'evento';
+  image_url?: string | null;
+  city_id?: number | null;
+}
+
+export async function createCommunityPost(input: CreateCommunityPostInput): Promise<number> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  const { data, error } = await supabase
+    .from('community_post')
+    .insert({
+      user_id: userData.user.id,
+      title: input.title,
+      content: input.content,
+      post_type: input.post_type,
+      image_url: input.image_url ?? null,
+      city_id: input.city_id ?? null,
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}
+
+export async function getCommunityPosts(
+  postTypeFilter?: string,
+  cityIdFilter?: number | null,
+  currentUserId?: string
+): Promise<CommunityPost[]> {
+  let query = supabase
+    .from('community_post')
+    .select(`
+      id,
+      user_id,
+      title,
+      content,
+      post_type,
+      image_url,
+      city_id,
+      likes_count,
+      comments_count,
+      created_at,
+      author:user_id ( full_name, username ),
+      city:city_id ( name )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (postTypeFilter && postTypeFilter !== 'todos') {
+    query = query.eq('post_type', postTypeFilter);
+  }
+
+  if (cityIdFilter) {
+    query = query.eq('city_id', cityIdFilter);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('Error fetching community posts:', error);
+    return [];
+  }
+
+  let userLikesSet = new Set<number>();
+  if (currentUserId && (data ?? []).length > 0) {
+    const postIds = data.map((p: any) => p.id);
+    const { data: likesData } = await supabase
+      .from('community_post_like')
+      .select('post_id')
+      .eq('user_id', currentUserId)
+      .in('post_id', postIds);
+
+    if (likesData) {
+      userLikesSet = new Set(likesData.map((l: any) => l.post_id));
+    }
+  }
+
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    author: Array.isArray(p.author) ? (p.author[0] ?? null) : (p.author ?? null),
+    city: Array.isArray(p.city) ? (p.city[0] ?? null) : (p.city ?? null),
+    likes_count: p.likes_count ?? 0,
+    comments_count: p.comments_count ?? 0,
+    is_liked_by_user: userLikesSet.has(p.id),
+  }));
+}
+
+export async function toggleCommunityPostLike(postId: number, userId: string): Promise<boolean> {
+  const { data: existingLike } = await supabase
+    .from('community_post_like')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingLike) {
+    await supabase
+      .from('community_post_like')
+      .delete()
+      .eq('id', existingLike.id);
+
+    const { data: currentPost } = await supabase
+      .from('community_post')
+      .select('likes_count')
+      .eq('id', postId)
+      .single();
+
+    const newCount = Math.max(0, (currentPost?.likes_count ?? 1) - 1);
+    await supabase.from('community_post').update({ likes_count: newCount }).eq('id', postId);
+    return false;
+  } else {
+    await supabase.from('community_post_like').insert({
+      post_id: postId,
+      user_id: userId,
+    });
+
+    const { data: currentPost } = await supabase
+      .from('community_post')
+      .select('likes_count')
+      .eq('id', postId)
+      .single();
+
+    const newCount = (currentPost?.likes_count ?? 0) + 1;
+    await supabase.from('community_post').update({ likes_count: newCount }).eq('id', postId);
+    return true;
+  }
+}
+
+export async function getCommunityPostById(postId: number, currentUserId?: string): Promise<CommunityPost | null> {
+  const { data, error } = await supabase
+    .from('community_post')
+    .select(`
+      id,
+      user_id,
+      title,
+      content,
+      post_type,
+      image_url,
+      city_id,
+      likes_count,
+      comments_count,
+      created_at,
+      author:user_id ( full_name, username ),
+      city:city_id ( name )
+    `)
+    .eq('id', postId)
+    .single();
+
+  if (error || !data) return null;
+
+  let isLiked = false;
+  if (currentUserId) {
+    const { data: likeData } = await supabase
+      .from('community_post_like')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', currentUserId)
+      .maybeSingle();
+    isLiked = Boolean(likeData);
+  }
+
+  return {
+    ...data,
+    author: Array.isArray((data as any).author) ? ((data as any).author[0] ?? null) : ((data as any).author ?? null),
+    city: Array.isArray((data as any).city) ? ((data as any).city[0] ?? null) : ((data as any).city ?? null),
+    is_liked_by_user: isLiked,
+  };
+}
+
+export async function getCommunityComments(postId: number): Promise<CommunityComment[]> {
+  const { data, error } = await supabase
+    .from('community_comment')
+    .select(`
+      id,
+      post_id,
+      user_id,
+      content,
+      created_at,
+      author:user_id ( full_name, username )
+    `)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((c: any) => ({
+    ...c,
+    author: Array.isArray(c.author) ? (c.author[0] ?? null) : (c.author ?? null),
+  }));
+}
+
+export async function addCommunityComment(postId: number, content: string, userId: string): Promise<void> {
+  const { error } = await supabase.from('community_comment').insert({
+    post_id: postId,
+    user_id: userId,
+    content: content.trim(),
+  });
+
+  if (error) throw error;
+
+  const { data: currentPost } = await supabase
+    .from('community_post')
+    .select('comments_count')
+    .eq('id', postId)
+    .single();
+
+  const newCount = (currentPost?.comments_count ?? 0) + 1;
+  await supabase.from('community_post').update({ comments_count: newCount }).eq('id', postId);
+}

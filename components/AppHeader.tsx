@@ -10,6 +10,7 @@ interface AppHeaderProps {
   showBack?: boolean;
   onBackPress?: () => void;
   showNotif?: boolean;
+  rightElement?: React.ReactNode;
 }
 
 export default function AppHeader({
@@ -17,6 +18,7 @@ export default function AppHeader({
   showBack = false,
   onBackPress,
   showNotif = true,
+  rightElement,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -62,9 +64,11 @@ export default function AppHeader({
         ) : null}
       </View>
        
-       {/* btn de notificaciones */}
+       {/* btn de notificaciones o accion personalizada */}
       <View style={styles.rightContainer}>
-        {showNotif ? (
+        {rightElement ? (
+          rightElement
+        ) : showNotif ? (
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => router.push('/(tabs)/notificaciones' as any)}
