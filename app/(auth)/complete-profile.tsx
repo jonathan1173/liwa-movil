@@ -146,7 +146,11 @@ export default function CompleteProfileScreen() {
     if (!fullName.trim()) newErrors.fullName = 'El nombre completo es requerido';
     if (!username.trim()) newErrors.username = 'El nombre de usuario es requerido';
     else if (username.includes(' ')) newErrors.username = 'Sin espacios';
-    if (!phone.trim()) newErrors.phone = 'El teléfono es requerido';
+    if (!phone.trim()) {
+      newErrors.phone = 'El teléfono es requerido';
+    } else if (!/^\d{8}$/.test(phone.trim())) {
+      newErrors.phone = 'El teléfono debe tener exactamente 8 dígitos';
+    }
     if (!city) newErrors.city = 'Selecciona una ciudad';
     if (!gender) newErrors.gender = 'Selecciona un género';
     if (!ethnicity) newErrors.ethnicity = 'Selecciona una etnicidad';
@@ -271,11 +275,16 @@ export default function CompleteProfileScreen() {
             <Ionicons name="call-outline" size={20} color={Colors.textSecondary} />
             <TextInput
               style={neumorphicStyles.inputText}
-              placeholder="Ej: 0000-0000"
+              placeholder="Ej: 88888888"
               placeholderTextColor={Colors.textPlaceholder}
               value={phone}
-              onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: '' })); }}
-              keyboardType="phone-pad"
+              onChangeText={(t) => {
+                const cleaned = t.replace(/[^0-9]/g, '').slice(0, 8);
+                setPhone(cleaned);
+                setErrors((e) => ({ ...e, phone: '' }));
+              }}
+              keyboardType="number-pad"
+              maxLength={8}
               returnKeyType="next"
               testID="profile-phone-input"
             />

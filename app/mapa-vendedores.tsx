@@ -254,33 +254,33 @@ export default function MapaVendedoresScreen() {
               </View>
             ) : null}
 
-            <View style={styles.coordsBadge}>
-              <Ionicons name="navigate-outline" size={14} color={Colors.textSecondary} />
-              <Text style={styles.coordsBadgeText}>
-                Lat: {selectedSeller?.latitude.toFixed(4)} | Lng: {selectedSeller?.longitude.toFixed(4)}
-              </Text>
-            </View>
+              {/* <View style={styles.coordsBadge}>
+                <Ionicons name="navigate-outline" size={14} color={Colors.textSecondary} />
+                <Text style={styles.coordsBadgeText}>
+                  Lat: {selectedSeller?.latitude.toFixed(4)} | Lng: {selectedSeller?.longitude.toFixed(4)}
+                </Text>
+              </View> */}
 
             {/* Acciones de Contacto */}
             {selectedSeller?.phone ? (
               <View style={styles.actionButtonsRow}>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: '#25D366' }]}
                   onPress={() => handleWhatsAppSeller(selectedSeller.phone!)}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="logo-whatsapp" size={18} color={Colors.white} />
                   <Text style={styles.actionBtnText}>WhatsApp</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
 
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={[styles.actionBtn, { backgroundColor: Colors.accent }]}
                   onPress={() => handleCallSeller(selectedSeller.phone!)}
                   activeOpacity={0.85}
                 >
                   <Ionicons name="call" size={18} color={Colors.white} />
                   <Text style={styles.actionBtnText}>Llamar</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             ) : null}
 
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.0)',
     justifyContent: 'flex-end',
   },
   sellerCardModal: {

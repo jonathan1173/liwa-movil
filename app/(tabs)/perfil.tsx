@@ -27,31 +27,30 @@ export default function PerfilScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+  const fetchProfile = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-        const { data, error } = await supabase
-          .from('profile')
-          .select('full_name, username, email, phone')
-          .eq('id', user.id)
-          .single();
+      const { data, error } = await supabase
+        .from('profile')
+        .select('full_name, username, email, phone')
+        .eq('id', user.id)
+        .single();
 
-        if (error) throw error;
-        setProfile(data);
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
+      if (error) throw error;
+      setProfile(data);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
     }
-    fetchProfile();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
+      fetchProfile();
+
       const onBackPress = () => {
         router.replace('/(tabs)/inicio' as any);
         return true;
@@ -59,7 +58,7 @@ export default function PerfilScreen() {
 
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, []),
+    }, [fetchProfile]),
   );
 
   async function handleSignOut() {

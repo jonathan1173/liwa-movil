@@ -36,7 +36,7 @@ export default function AppHeader({
       <View style={styles.leftContainer}>
         {showBack ? (
           <TouchableOpacity onPress={handleBack} style={styles.iconBtn} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={24} color={Colors.white} />
+            <Ionicons name="arrow-back" size={24} color={Colors.darkGray} />
           </TouchableOpacity>
         ) : (
           <Image

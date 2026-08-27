@@ -47,7 +47,7 @@ export default function AjustesPerfilScreen() {
         if (data) {
           setFullName(data.full_name ?? '');
           setUsername(data.username ?? '');
-          setPhone(data.phone ?? '');
+          setPhone(data.phone ? data.phone.replace(/[^0-9]/g, '').slice(0, 8) : '');
           setLatitude(data.latitude ?? null);
           setLongitude(data.longitude ?? null);
         }
@@ -65,7 +65,11 @@ export default function AjustesPerfilScreen() {
     if (!fullName.trim()) newErrors.fullName = 'El nombre completo es requerido';
     if (!username.trim()) newErrors.username = 'El nombre de usuario es requerido';
     else if (username.includes(' ')) newErrors.username = 'Sin espacios';
-    if (!phone.trim()) newErrors.phone = 'El teléfono es requerido';
+    if (!phone.trim()) {
+      newErrors.phone = 'El teléfono es requerido';
+    } else if (!/^\d{8}$/.test(phone.trim())) {
+      newErrors.phone = 'El teléfono debe tener exactamente 8 dígitos';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -167,9 +171,16 @@ export default function AjustesPerfilScreen() {
             <Ionicons name="call-outline" size={20} color={Colors.textSecondary} />
             <TextInput
               style={neumorphicStyles.inputText}
+              placeholder="Ej: 88888888"
+              placeholderTextColor={Colors.textPlaceholder}
               value={phone}
-              onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: '' })); }}
-              keyboardType="phone-pad"
+              onChangeText={(t) => {
+                const cleaned = t.replace(/[^0-9]/g, '').slice(0, 8);
+                setPhone(cleaned);
+                setErrors((e) => ({ ...e, phone: '' }));
+              }}
+              keyboardType="number-pad"
+              maxLength={8}
             />
           </View>
           {errors.phone ? <Text style={neumorphicStyles.errorText}>{errors.phone}</Text> : null}
