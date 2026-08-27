@@ -1,20 +1,20 @@
+import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
+import { checkProfileCompleted, signUp } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { signUp, checkProfileCompleted } from '@/lib/supabase';
-import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -113,12 +113,7 @@ export default function RegisterScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Logo */}
-        <View style={styles.logoWrapper}>
-          <View style={neumorphicStyles.logoCircle}>
-            <Text style={styles.logoText}>L</Text>
-          </View>
-        </View>
+
 
         {/* Card */}
         <View style={[neumorphicStyles.card, styles.card]}>

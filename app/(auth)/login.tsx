@@ -1,20 +1,21 @@
+import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
+import { checkProfileCompleted, signIn } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { signIn, checkProfileCompleted } from '@/lib/supabase';
-import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -78,10 +79,12 @@ export default function LoginScreen() {
       >
         {/* Logo */}
         <View style={styles.logoWrapper}>
-          <View style={neumorphicStyles.logoCircle}>
-            <Text style={styles.logoText}>L</Text>
-          </View>
-          <Text style={styles.appName}>Liwa</Text>
+          <Image
+            source={require('../../assets/images/liwa_nombre.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          {/* <Text style={styles.appName}>Liwa</Text> */}
           <Text style={neumorphicStyles.subtitle}>Tu mercado de confianza</Text>
         </View>
 
@@ -191,6 +194,10 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '900',
     letterSpacing: -1,
+  },
+  logoImage: {
+    width: 150,
+    height: 106,
   },
   appName: {
     color: Colors.textPrimary,

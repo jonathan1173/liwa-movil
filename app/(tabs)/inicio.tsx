@@ -75,7 +75,22 @@ export default function InicioScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 4: Capacitaciones */}
+          {/* Tarjeta 4: Mapa de Vendedores */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#D81B60' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/mapa-vendedores' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="map-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Mapa</Text>
+              <Text style={styles.cardSubtitle}>ubica a los vendedores</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tarjeta 5: Capacitaciones */}
           <TouchableOpacity
             style={[styles.menuCard, { backgroundColor: '#5E2B97' }]}
             activeOpacity={0.88}
@@ -90,7 +105,7 @@ export default function InicioScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 5: Comunidad */}
+          {/* Tarjeta 6: Comunidad */}
           <TouchableOpacity
             style={[styles.menuCard, { backgroundColor: '#2b5397' }]}
             activeOpacity={0.88}
@@ -105,20 +120,7 @@ export default function InicioScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 6: Mapa de Vendedores */}
-          <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#D81B60' }]}
-            activeOpacity={0.88}
-            onPress={() => router.push('/mapa-vendedores' as any)}
-          >
-            <View style={styles.cardIconBox}>
-              <Ionicons name="map-outline" size={42} color={Colors.white} />
-            </View>
-            <View style={styles.cardTextBox}>
-              <Text style={styles.cardTitle}>Mapa</Text>
-              <Text style={styles.cardSubtitle}>ubica a los vendedores</Text>
-            </View>
-          </TouchableOpacity>
+
         </View>
       </ScrollView>
     </SafeAreaView>

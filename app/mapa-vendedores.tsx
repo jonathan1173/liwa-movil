@@ -16,7 +16,10 @@ import { WebView } from 'react-native-webview';
 import { getSellerLocations, SellerLocation } from '@/lib/supabase';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export default function MapaVendedoresScreen() {
+  const insets = useSafeAreaInsets();
   const [sellers, setSellers] = useState<SellerLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeller, setSelectedSeller] = useState<SellerLocation | null>(null);
@@ -144,8 +147,8 @@ export default function MapaVendedoresScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header flotante */}
-      <View style={styles.headerBar}>
+      {/* Header flotante con inset para evitar notch/cámara */}
+      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>

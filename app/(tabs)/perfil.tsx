@@ -175,7 +175,7 @@ export default function PerfilScreen() {
                   {
                     icon: 'settings-outline',
                     label: 'Ajustes',
-                    onPress: () => { },
+                    onPress: () => router.push('/ajustes-perfil' as any),
                   },
                 ].map(({ icon, label, onPress, color }) => (
                   <TouchableOpacity
