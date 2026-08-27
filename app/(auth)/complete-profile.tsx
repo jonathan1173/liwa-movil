@@ -23,6 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import LocationPickerModal from '@/components/LocationPickerModal';
 
 interface Option {
   id: number;
@@ -111,6 +112,9 @@ export default function CompleteProfileScreen() {
   const [city, setCity] = useState<Option | null>(null);
   const [gender, setGender] = useState<Option | null>(null);
   const [ethnicity, setEthnicity] = useState<Option | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   const [cities, setCities] = useState<Option[]>([]);
   const [genders, setGenders] = useState<Option[]>([]);
@@ -146,6 +150,9 @@ export default function CompleteProfileScreen() {
     if (!city) newErrors.city = 'Selecciona una ciudad';
     if (!gender) newErrors.gender = 'Selecciona un género';
     if (!ethnicity) newErrors.ethnicity = 'Selecciona una etnicidad';
+    if (latitude === null || longitude === null) {
+      newErrors.location = 'Debes seleccionar la ubicación de tu local';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -164,6 +171,8 @@ export default function CompleteProfileScreen() {
         city_id: city!.id,
         gender_id: gender!.id,
         ethnicity_id: ethnicity!.id,
+        latitude: latitude,
+        longitude: longitude,
         profile_completed: true,
       });
 
@@ -311,6 +320,47 @@ export default function CompleteProfileScreen() {
             testID="profile-ethnicity-picker"
           />
           {errors.ethnicity ? <Text style={neumorphicStyles.errorText}>{errors.ethnicity}</Text> : null}
+
+          {/* Location Picker Button */}
+          <Text style={neumorphicStyles.label}>Ubicación del local</Text>
+          <TouchableOpacity
+            style={[neumorphicStyles.inputContainer, errors.location ? styles.inputError : null]}
+            onPress={() => {
+              setShowLocationModal(true);
+              setErrors((e) => ({ ...e, location: '' }));
+            }}
+            activeOpacity={0.85}
+            testID="profile-location-button"
+          >
+            <Ionicons
+              name={latitude !== null && longitude !== null ? "location" : "location-outline"}
+              size={20}
+              color={latitude !== null && longitude !== null ? Colors.accent : Colors.textSecondary}
+            />
+            <Text
+              style={[
+                neumorphicStyles.inputText,
+                (latitude === null || longitude === null) && { color: Colors.textPlaceholder },
+              ]}
+            >
+              {latitude !== null && longitude !== null
+                ? `Ubicación: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                : 'Seleccionar ubicación del local...'}
+            </Text>
+            <Ionicons name="chevron-forward-outline" size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
+          {errors.location ? <Text style={neumorphicStyles.errorText}>{errors.location}</Text> : null}
+
+          <LocationPickerModal
+            visible={showLocationModal}
+            initialLatitude={latitude}
+            initialLongitude={longitude}
+            onClose={() => setShowLocationModal(false)}
+            onSelectLocation={(lat, lng) => {
+              setLatitude(lat);
+              setLongitude(lng);
+            }}
+          />
 
           <View style={styles.spacer} />
 

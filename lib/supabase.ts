@@ -55,6 +55,8 @@ export interface ProfileUpdate {
   city_id: number;
   gender_id: number;
   ethnicity_id: number;
+  latitude?: number | null;
+  longitude?: number | null;
   profile_completed: boolean;
 }
 
