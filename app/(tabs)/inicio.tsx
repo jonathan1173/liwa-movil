@@ -104,6 +104,21 @@ export default function InicioScreen() {
               <Text style={styles.cardSubtitle}>conecta y colabora</Text>
             </View>
           </TouchableOpacity>
+
+          {/* Tarjeta 6: Mapa de Vendedores */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#D81B60' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/mapa-vendedores' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="map-outline" size={42} color={Colors.white} />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Mapa</Text>
+              <Text style={styles.cardSubtitle}>ubica a los vendedores</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

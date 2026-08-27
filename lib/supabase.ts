@@ -72,6 +72,42 @@ export async function updateProfile(userId: string, profile: ProfileUpdate) {
   return data;
 }
 
+export interface SellerLocation {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  phone: string | null;
+  latitude: number;
+  longitude: number;
+  city?: { name: string } | null;
+}
+
+export async function getSellerLocations(): Promise<SellerLocation[]> {
+  const { data, error } = await supabase
+    .from('profile')
+    .select(`
+      id,
+      full_name,
+      username,
+      phone,
+      latitude,
+      longitude,
+      city:city_id ( name )
+    `)
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null);
+
+  if (error) {
+    console.warn('Error fetching seller locations:', error);
+    return [];
+  }
+
+  return (data ?? []).map((p: any) => ({
+    ...p,
+    city: Array.isArray(p.city) ? (p.city[0] ?? null) : (p.city ?? null),
+  }));
+}
+
 // ─── Catalog helpers ─────────────────────────────────────────────────────────
 
 export async function getCities() {
