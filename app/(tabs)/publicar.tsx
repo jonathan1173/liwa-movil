@@ -304,7 +304,7 @@ export default function PublicarScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Publicar" showBack={true} onBackPress={handleBack} />
+      <AppHeader title="Publicar" />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

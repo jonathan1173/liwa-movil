@@ -91,7 +91,7 @@ export default function PerfilScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Perfil" showBack={true} />
+      <AppHeader title="Perfil" />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

@@ -6,7 +6,7 @@ import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 export default function ComunidadScreen() {
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Comunidad" showBack={true} />
+      <AppHeader title="Comunidad" />
 
       <View style={styles.container}>
         <Text style={styles.title}>Comunidad</Text>

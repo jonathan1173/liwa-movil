@@ -115,7 +115,7 @@ export default function AjustesPerfilScreen() {
       style={neumorphicStyles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <AppHeader title="Ajustes de Perfil" showBack={true} />
+      <AppHeader title="Ajustes de Perfil" showBack={true} showNotif={false} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

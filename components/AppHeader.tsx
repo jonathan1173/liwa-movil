@@ -35,12 +35,12 @@ export default function AppHeader({
       {/* btn de atras */}
       <View style={styles.leftContainer}>
         {showBack ? (
-          <TouchableOpacity onPress={handleBack} style={styles.iconBtn} activeOpacity= {0.7}>
-            {/* <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} /> */}
+          <TouchableOpacity onPress={handleBack} style={styles.iconBtn} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color={Colors.white} />
           </TouchableOpacity>
         ) : (
           <Image
-            source={require('@/assets/images/liwa_nombre.png')}
+            // source={require('@/assets/images/liwa_nombre.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.purple,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: Colors.white,
     textAlign: 'center',
   },
 });

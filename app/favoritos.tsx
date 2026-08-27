@@ -1,3 +1,4 @@
+import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getFavorites, removeFavorite, FavoriteProduct } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
@@ -190,6 +191,8 @@ export default function FavoritosScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
+      <AppHeader title="Favoritos" showBack={true} onBackPress={handleBack} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -202,17 +205,6 @@ export default function FavoritosScreen() {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backCircle}
-            onPress={handleBack}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={[neumorphicStyles.title, styles.pageTitle]}>Favoritos</Text>
-        </View>
 
         {/* Counter */}
         {!loading && favorites.length > 0 && (

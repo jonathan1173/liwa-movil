@@ -153,7 +153,7 @@ export default function NotificacionesScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Notificaciones" showBack={true} onBackPress={handleBack} />
+      <AppHeader title="Notificaciones" showBack={true} onBackPress={handleBack} showNotif={false} />
 
       <View style={styles.container}>
         {loading ? (

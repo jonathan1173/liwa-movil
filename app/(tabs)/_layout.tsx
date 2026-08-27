@@ -16,7 +16,7 @@ function TabIcon({
       <Ionicons
         name={name}
         size={22}
-        color={focused ? Colors.white : Colors.textSecondary}
+        color={focused ? Colors.white : Colors.white}
       />
     </View>
   );
@@ -28,8 +28,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: Colors.accent,
-        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarActiveTintColor: Colors.white,
+        tabBarInactiveTintColor: Colors.white,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -42,7 +42,7 @@ export default function TabLayout() {
           alignItems: 'center',
         },
         tabBarStyle: {
-          backgroundColor: Colors.background,
+          backgroundColor: Colors.purple,
           borderTopWidth: 0,
           height: 70,
           paddingTop: 6,
@@ -87,13 +87,13 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ── Eventos ── */}
+      {/* ── Comunidad ── */}
       <Tabs.Screen
-        name="capacitaciones"
+        name="comunidad"
         options={{
-          title: 'Capacitaciones',
+          title: 'Comunidad',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'calendar' : 'calendar-outline'} focused={focused} />
+            <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} />
           ),
         }}
       />
@@ -111,7 +111,7 @@ export default function TabLayout() {
 
       {/* Hidden secondary screens */}
       <Tabs.Screen name="notificaciones" options={{ href: null }} />
-      <Tabs.Screen name="comunidad" options={{ href: null }} />
+      <Tabs.Screen name="capacitaciones" options={{ href: null }} />
       <Tabs.Screen name="trueque" options={{ href: null }} />
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="two" options={{ href: null }} />

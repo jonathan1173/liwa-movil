@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ActivityIndicator,
-  Modal,
-  Platform,
-  Linking,
-  Image,
-  ScrollView,
-} from 'react-native';
+import AppHeader from '@/components/AppHeader';
+import { Colors } from '@/constants/NeumorphicStyles';
+import { getMyProducts, getSellerLocations, Product, SellerLocation } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { WebView } from 'react-native-webview';
-import { getSellerLocations, SellerLocation, getMyProducts, Product } from '@/lib/supabase';
-import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Linking,
+  Modal,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 export default function MapaVendedoresScreen() {
   const insets = useSafeAreaInsets();
@@ -178,14 +178,7 @@ export default function MapaVendedoresScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header flotante con inset para evitar notch/cámara */}
-      <View style={[styles.headerBar, { paddingTop: Math.max(insets.top, 12) }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mapa de Vendedores</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <AppHeader title="Mapa de Vendedores" showBack={true} showNotif={true} />
 
       {/* Contenido del mapa */}
       {loading ? (

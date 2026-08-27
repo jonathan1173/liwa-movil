@@ -119,7 +119,7 @@ export default function ExplorarScreen() {
 
   return (
     <SafeAreaView style={[neumorphicStyles.screen, styles.screenBg]}>
-      <AppHeader title="Explorar" showBack={true} />
+      <AppHeader title="Explorar" />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

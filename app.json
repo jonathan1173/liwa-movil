@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/liwa_favicon.png",
+        "foregroundImage": "./assets/images/liwa_android.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

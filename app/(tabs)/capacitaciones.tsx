@@ -6,7 +6,7 @@ import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 export default function CapacitacionesScreen() {
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Capacitaciones" showBack={true} />
+      <AppHeader title="Capacitaciones" showBack={true} showNotif={false} />
 
       <View style={styles.container}>
         <Text style={styles.title}>Capacitaciones y Recursos</Text>

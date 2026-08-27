@@ -90,20 +90,6 @@ export default function InicioScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 5: Capacitaciones */}
-          <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#5E2B97' }]}
-            activeOpacity={0.88}
-            onPress={() => router.push('/(tabs)/capacitaciones' as any)}
-          >
-            <View style={styles.cardIconBox}>
-              <Ionicons name="book-outline" size={42} color={Colors.white} />
-            </View>
-            <View style={styles.cardTextBox}>
-              <Text style={styles.cardTitle}>Capacitaciones</Text>
-              <Text style={styles.cardSubtitle}>y recursos</Text>
-            </View>
-          </TouchableOpacity>
 
           {/* Tarjeta 6: Comunidad */}
           <TouchableOpacity

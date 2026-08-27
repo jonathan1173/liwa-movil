@@ -1,3 +1,4 @@
+import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getMyProducts, getStates, Product, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -164,6 +165,8 @@ export default function MisPublicacionesScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
+      <AppHeader title="Mis Publicaciones" showBack={true} onBackPress={handleBack} />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -176,13 +179,6 @@ export default function MisPublicacionesScreen() {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backCircle} onPress={handleBack} activeOpacity={0.85}>
-            <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={[neumorphicStyles.title, styles.pageTitle]}>Mis Publicaciones</Text>
-        </View>
 
         {/* Loading */}
         {loading && (
