@@ -49,13 +49,17 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      - name: 8. Subir APK como artefacto
+      - name: 8. Renombrar APK
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/liwa-v${{ env.VERSION }}.apk
+
+      - name: 9. Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-v${{ env.VERSION }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: liwa-v${{ env.VERSION }}
+          path: android/app/build/outputs/apk/release/liwa-v${{ env.VERSION }}.apk
 
-      - name: 9. Crear Release en GitHub
+      - name: 10. Crear Release en GitHub
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION }}
@@ -68,7 +72,7 @@ jobs:
             **Commit:** ${{ github.sha }}
 
             APK generado automáticamente mediante GitHub Actions.
-          files: android/app/build/outputs/apk/release/app-release.apk
+          files: android/app/build/outputs/apk/release/liwa-v${{ env.VERSION }}.apk
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
