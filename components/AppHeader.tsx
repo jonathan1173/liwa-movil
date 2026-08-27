@@ -32,10 +32,11 @@ export default function AppHeader({
 
   return (
     <View style={[styles.headerContainer, { paddingTop: Math.max(insets.top, 16) }]}>
+      {/* btn de atras */}
       <View style={styles.leftContainer}>
         {showBack ? (
           <TouchableOpacity onPress={handleBack} style={styles.iconBtn} activeOpacity= {0.7}>
-            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+            {/* <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} /> */}
           </TouchableOpacity>
         ) : (
           <Image
@@ -45,7 +46,8 @@ export default function AppHeader({
           />
         )}
       </View>
-
+        
+        {/* titulo  */}
       <View style={styles.centerContainer}>
         {title ? (
           <Text style={styles.headerTitle} numberOfLines={1}>
@@ -59,7 +61,8 @@ export default function AppHeader({
           />
         ) : null}
       </View>
-
+       
+       {/* btn de notificaciones */}
       <View style={styles.rightContainer}>
         {showNotif ? (
           <TouchableOpacity

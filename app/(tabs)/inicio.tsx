@@ -77,7 +77,7 @@ export default function InicioScreen() {
 
           {/* Tarjeta 4: Mapa de Vendedores */}
           <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#D81B60' }]}
+            style={[styles.menuCard, { backgroundColor: '#d8cb1b' }]}
             activeOpacity={0.88}
             onPress={() => router.push('/mapa-vendedores' as any)}
           >

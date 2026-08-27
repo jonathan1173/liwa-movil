@@ -9,13 +9,14 @@ import {
   Modal,
   Platform,
   Linking,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { WebView } from 'react-native-webview';
-import { getSellerLocations, SellerLocation } from '@/lib/supabase';
+import { getSellerLocations, SellerLocation, getMyProducts, Product } from '@/lib/supabase';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function MapaVendedoresScreen() {
@@ -23,6 +24,12 @@ export default function MapaVendedoresScreen() {
   const [sellers, setSellers] = useState<SellerLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeller, setSelectedSeller] = useState<SellerLocation | null>(null);
+
+  // Estados para los productos del vendedor seleccionado y paginación (2x2 = 4 por página)
+  const [sellerProducts, setSellerProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 4;
 
   useEffect(() => {
     async function loadData() {
@@ -37,6 +44,30 @@ export default function MapaVendedoresScreen() {
     }
     loadData();
   }, []);
+
+  // Cargar productos del vendedor cuando se selecciona uno
+  useEffect(() => {
+    if (!selectedSeller) {
+      setSellerProducts([]);
+      setCurrentPage(1);
+      return;
+    }
+
+    async function loadSellerProducts() {
+      setLoadingProducts(true);
+      setCurrentPage(1);
+      try {
+        const prods = await getMyProducts(selectedSeller!.id);
+        setSellerProducts(prods);
+      } catch (err) {
+        console.warn('Error loading products for seller:', err);
+      } finally {
+        setLoadingProducts(false);
+      }
+    }
+
+    loadSellerProducts();
+  }, [selectedSeller]);
 
   // Coordenadas iniciales por defecto (Honduras - Tegucigalpa)
   const defaultLat = sellers.length > 0 ? sellers[0].latitude : 14.0723;
@@ -259,6 +290,113 @@ export default function MapaVendedoresScreen() {
                 </TouchableOpacity>
               </View>
             ) : null}
+
+            <View style={styles.infoDivider} />
+
+            {/* Mostrador de Productos del Vendedor (2 x 2 con paginación) */}
+            <View style={styles.productsSectionHeader}>
+              <Text style={styles.productsSectionTitle}>Productos en venta</Text>
+              {sellerProducts.length > 0 ? (
+                <Text style={styles.productsCountText}>
+                  {sellerProducts.length} producto{sellerProducts.length > 1 ? 's' : ''}
+                </Text>
+              ) : null}
+            </View>
+
+            {loadingProducts ? (
+              <View style={styles.loadingProductsBox}>
+                <ActivityIndicator size="small" color={Colors.accent} />
+                <Text style={styles.loadingProductsText}>Cargando productos…</Text>
+              </View>
+            ) : sellerProducts.length === 0 ? (
+              <View style={styles.noProductsBox}>
+                <Ionicons name="bag-remove-outline" size={28} color={Colors.textSecondary} />
+                <Text style={styles.noProductsText}>Este vendedor aún no ha publicado productos</Text>
+              </View>
+            ) : (
+              <>
+                {/* Grilla 2 x 2 de productos */}
+                <View style={styles.productGrid2x2}>
+                  {sellerProducts
+                    .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                    .map((prod) => {
+                      const imgUrl = prod.images[0]?.url ?? null;
+                      return (
+                        <TouchableOpacity
+                          key={prod.id}
+                          style={styles.gridProductCard}
+                          activeOpacity={0.85}
+                          onPress={() => {
+                            setSelectedSeller(null);
+                            router.push(`/producto/${prod.id}` as any);
+                          }}
+                        >
+                          <View style={styles.gridImageWrapper}>
+                            {imgUrl ? (
+                              <Image source={{ uri: imgUrl }} style={styles.gridImage} resizeMode="cover" />
+                            ) : (
+                              <Ionicons name="image-outline" size={24} color={Colors.textSecondary} />
+                            )}
+                          </View>
+                          <Text style={styles.gridProductTitle} numberOfLines={2}>
+                            {prod.title}
+                          </Text>
+                          <Text style={styles.gridProductPrice}>
+                            C$ {prod.price.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+
+                {/* Paginación si hay más de 4 productos */}
+                {sellerProducts.length > ITEMS_PER_PAGE ? (
+                  <View style={styles.paginationRow}>
+                    <TouchableOpacity
+                      style={[styles.pageBtn, currentPage === 1 && styles.pageBtnDisabled]}
+                      disabled={currentPage === 1}
+                      onPress={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    >
+                      <Ionicons name="chevron-back" size={18} color={currentPage === 1 ? Colors.textPlaceholder : Colors.textPrimary} />
+                      <Text style={[styles.pageBtnText, currentPage === 1 && styles.pageBtnTextDisabled]}>Anterior</Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.pageIndicatorText}>
+                      Pág. {currentPage} de {Math.ceil(sellerProducts.length / ITEMS_PER_PAGE)}
+                    </Text>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.pageBtn,
+                        currentPage >= Math.ceil(sellerProducts.length / ITEMS_PER_PAGE) && styles.pageBtnDisabled,
+                      ]}
+                      disabled={currentPage >= Math.ceil(sellerProducts.length / ITEMS_PER_PAGE)}
+                      onPress={() =>
+                        setCurrentPage((p) => Math.min(Math.ceil(sellerProducts.length / ITEMS_PER_PAGE), p + 1))
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.pageBtnText,
+                          currentPage >= Math.ceil(sellerProducts.length / ITEMS_PER_PAGE) && styles.pageBtnTextDisabled,
+                        ]}
+                      >
+                        Siguiente
+                      </Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color={
+                          currentPage >= Math.ceil(sellerProducts.length / ITEMS_PER_PAGE)
+                            ? Colors.textPlaceholder
+                            : Colors.textPrimary
+                        }
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </>
+            )}
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -414,5 +552,123 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: '700',
     fontSize: 14,
+  },
+  // Estilos del mostrador 2x2 de productos
+  productsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  productsSectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  productsCountText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  loadingProductsBox: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingProductsText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 6,
+  },
+  noProductsBox: {
+    alignItems: 'center',
+    paddingVertical: 18,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 12,
+  },
+  noProductsText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 6,
+  },
+  productGrid2x2: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  gridProductCard: {
+    width: '48%',
+    backgroundColor: Colors.background,
+    borderRadius: 14,
+    padding: 8,
+    elevation: 3,
+    shadowColor: Colors.shadowDark,
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+    marginBottom: 4,
+  },
+  gridImageWrapper: {
+    width: '100%',
+    height: 84,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gridProductTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    lineHeight: 15,
+    minHeight: 30,
+  },
+  gridProductPrice: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.accent,
+    marginTop: 4,
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+  },
+  pageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.04)',
+  },
+  pageBtnDisabled: {
+    opacity: 0.4,
+  },
+  pageBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  pageBtnTextDisabled: {
+    color: Colors.textPlaceholder,
+  },
+  pageIndicatorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textSecondary,
   },
 });
