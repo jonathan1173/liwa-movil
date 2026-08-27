@@ -87,9 +87,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.purple,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    borderBottomColor: 'rgba(0, 0, 0, 0.2)',
   },
   leftContainer: {
     width: 100,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.white,
+    color: Colors.darkGray,
     textAlign: 'center',
   },
 });
