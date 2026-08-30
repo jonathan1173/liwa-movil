@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { checkProfileCompleted, supabase } from '@/lib/supabase';
+import { UpdateModal } from '@/components/UpdateModal';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -90,6 +91,7 @@ function RootLayoutNav() {
       <Stack.Screen name="ajustes-perfil" options={{ headerShown: false }} />
       <Stack.Screen name="comunidad/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      <UpdateModal />
     </Stack>
   );
 }
