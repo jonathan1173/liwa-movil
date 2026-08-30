@@ -3,7 +3,7 @@ import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { signOut, supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,

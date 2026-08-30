@@ -1,4 +1,3 @@
-import AppHeader from '@/components/AppHeader';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -15,8 +14,7 @@ import {
 export default function InicioScreen() {
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      {/* Header unificado */}
-      <AppHeader showNotif={true} />
+      
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -122,6 +120,7 @@ const styles = StyleSheet.create({
   },
   greetingContainer: {
     marginBottom: 24,
+    marginTop: 18,
   },
   greetingTitle: {
     fontSize: 26,

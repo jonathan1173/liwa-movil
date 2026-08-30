@@ -291,9 +291,9 @@ export default function ProductoDetailScreen() {
 
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          {/* Botón de Trueque (a la izquierda de favoritos) */}
+          {/* Botón de Trueque  */}
 
-          {product?.barter && !isOwner && (
+          {/* {product?.barter && !isOwner && (
             <TouchableOpacity
               style={styles.headerBtn}
               onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
@@ -301,7 +301,7 @@ export default function ProductoDetailScreen() {
             >
               <Ionicons name="swap-horizontal" size={22} color={Colors.accent} />
             </TouchableOpacity>
-          )}
+          )} */}
 
           {/* Botón de Favorito (corazón) */}
           <TouchableOpacity
