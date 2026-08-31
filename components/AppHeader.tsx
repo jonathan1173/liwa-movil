@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 12,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.purple,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.2)',
   },
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.darkGray,
+    color: Colors.white,
     textAlign: 'center',
   },
 });

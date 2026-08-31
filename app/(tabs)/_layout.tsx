@@ -16,7 +16,7 @@ function TabIcon({
       <Ionicons
         name={name}
         size={22}
-        color={focused ? Colors.white : Colors.darkGray}
+        color={focused ? Colors.white : Colors.white}
       />
     </View>
   );
@@ -28,8 +28,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: Colors.darkGray,
-        tabBarInactiveTintColor: Colors.darkGray,
+        tabBarActiveTintColor: Colors.white,
+        tabBarInactiveTintColor: Colors.white,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -42,7 +42,7 @@ export default function TabLayout() {
           alignItems: 'center',
         },
         tabBarStyle: {
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.purple,
           borderTopWidth: 0,
           height: 70,
           paddingTop: 6,
