@@ -15,7 +15,7 @@ import {
 export default function InicioScreen() {
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      < AppHeader title="" showBack={false} showNotif={true} />
+      < AppHeader title="." showBack={false} showNotif={true} />
 
 
       <ScrollView
