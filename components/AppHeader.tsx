@@ -100,11 +100,10 @@ export default function AppHeader({
           ) : null}
         </View>
 
-        {/* Sección derecha: Notificación o elemento personalizado */}
+        {/* Sección derecha: Elemento adicional (ej. Publicar) + Notificación */}
         <View style={styles.rightSection}>
-          {rightElement ? (
-            rightElement
-          ) : showNotif ? (
+          {rightElement}
+          {showNotif ? (
             <TouchableOpacity
               style={styles.notifBtn}
               onPress={() => router.push('/(tabs)/notificaciones' as any)}
@@ -117,9 +116,9 @@ export default function AppHeader({
               />
               {/* <View style={styles.notifBadge} /> */}
             </TouchableOpacity>
-          ) : (
-            <View style={{ width: 40 }} />
-          )}
+          ) : !rightElement ? (
+            <View style={{ width: 42 }} />
+          ) : null}
         </View>
       </View>
 
@@ -220,8 +219,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   rightSection: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
   notifBtn: {
     width: 42,

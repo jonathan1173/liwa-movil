@@ -1,4 +1,5 @@
 import AppHeader from '@/components/AppHeader';
+import CommunityFilterModal, { CityOption } from '@/components/CommunityFilterModal';
 import CreatePostModal from '@/components/CreatePostModal';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import {
@@ -10,7 +11,7 @@ import {
 } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -18,25 +19,21 @@ import {
   Modal,
   RefreshControl,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-
-interface CityOption {
-  id: number;
-  name: string;
-}
 
 export default function ComunidadScreen() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedType, setSelectedType] = useState<string>('todos');
   const [selectedCity, setSelectedCity] = useState<CityOption | null>(null);
   const [cities, setCities] = useState<CityOption[]>([]);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [showCityModal, setShowCityModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -100,14 +97,28 @@ export default function ComunidadScreen() {
     }
   }
 
-  const renderHeaderLeft = (
+  // Filtrado de publicaciones en tiempo real según la búsqueda
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return posts;
+    const q = searchQuery.toLowerCase().trim();
+    return posts.filter((p) => {
+      const titleMatch = p.title?.toLowerCase().includes(q);
+      const contentMatch = p.content?.toLowerCase().includes(q);
+      const authorMatch =
+        p.author?.full_name?.toLowerCase().includes(q) ||
+        p.author?.username?.toLowerCase().includes(q);
+      const cityMatch = p.city?.name?.toLowerCase().includes(q);
+      return titleMatch || contentMatch || authorMatch || cityMatch;
+    });
+  }, [posts, searchQuery]);
+
+  const renderPublishButton = (
     <TouchableOpacity
-      style={styles.publishHeaderBtn}
+      style={styles.publishActionBtn}
       onPress={() => setShowCreateModal(true)}
-      activeOpacity={0.8}
+      activeOpacity={0.75}
     >
-      <Ionicons name="add-circle-outline" size={18} color={Colors.white} />
-      <Text style={styles.publishHeaderBtnText}>Publicar</Text>
+      <Ionicons name="add" size={24} color={Colors.white} />
     </TouchableOpacity>
   );
 
@@ -115,73 +126,18 @@ export default function ComunidadScreen() {
     <SafeAreaView style={neumorphicStyles.screen}>
       <AppHeader
         title="Comunidad"
-        leftElement={renderHeaderLeft}
+        subtitle="RED SOCIAL"
+        rightElement={renderPublishButton}
         showNotif={true}
+        showSearch={true}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Buscar en la comunidad..."
+        onFilterPress={() => setShowFilterModal(true)}
+        hasActiveFilters={selectedType !== 'todos' || Boolean(selectedCity)}
       />
 
-      {/* Bar de Filtros */}
-      <View style={styles.filterSection}>
-        {/* Chips de Categorías */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {[
-            { id: 'todos', label: 'Todos' },
-            { id: 'anuncio', label: 'Anuncios' },
-            { id: 'evento', label: 'Eventos' },
-          ].map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.categoryChip,
-                selectedType === cat.id && styles.categoryChipActive,
-              ]}
-              onPress={() => setSelectedType(cat.id)}
-            >
-              <Text
-                style={[
-                  styles.categoryChipText,
-                  selectedType === cat.id && styles.categoryChipTextActive,
-                ]}
-              >
-                {cat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-
-          {/* Filtro de Ciudad */}
-          <TouchableOpacity
-            style={[
-              styles.cityFilterChip,
-              selectedCity && styles.cityFilterChipActive,
-            ]}
-            onPress={() => setShowCityModal(true)}
-          >
-            <Ionicons
-              name="location-outline"
-              size={14}
-              color={selectedCity ? Colors.white : Colors.accent}
-            />
-            <Text
-              style={[
-                styles.cityFilterChipText,
-                selectedCity && styles.cityFilterChipTextActive,
-              ]}
-              numberOfLines={1}
-            >
-              {selectedCity ? selectedCity.name : 'Ciudad'}
-            </Text>
-            <Ionicons
-              name="chevron-down"
-              size={12}
-              color={selectedCity ? Colors.white : Colors.accent}
-            />
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
+   
       {/* Feed de Publicaciones */}
       {loading ? (
         <View style={styles.centered}>
@@ -190,7 +146,7 @@ export default function ComunidadScreen() {
         </View>
       ) : (
         <FlatList
-          data={posts}
+          data={filteredPosts}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.feedScroll}
           refreshControl={
@@ -276,9 +232,15 @@ export default function ComunidadScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="people-outline" size={48} color={Colors.textSecondary} />
-              <Text style={styles.emptyTitle}>No hay publicaciones aún</Text>
+              <Text style={styles.emptyTitle}>
+                {searchQuery.trim()
+                  ? `No se encontraron resultados para "${searchQuery}"`
+                  : 'No hay publicaciones aún'}
+              </Text>
               <Text style={styles.emptySubtitle}>
-                Sé el primero en compartir un anuncio o evento con la comunidad de LIWA.
+                {searchQuery.trim()
+                  ? 'Intenta con otros términos o limpia los filtros.'
+                  : 'Sé el primero en compartir un anuncio o evento con la comunidad de LIWA.'}
               </Text>
             </View>
           }
@@ -334,6 +296,19 @@ export default function ComunidadScreen() {
         </TouchableOpacity>
       </Modal>
 
+      {/* Modal de Filtros de Comunidad */}
+      <CommunityFilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        selectedType={selectedType}
+        selectedCity={selectedCity}
+        cities={cities}
+        onApply={(type, city) => {
+          setSelectedType(type);
+          setSelectedCity(city);
+        }}
+      />
+
       {/* Modal para Crear Publicación */}
       <CreatePostModal
         visible={showCreateModal}
@@ -350,19 +325,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  publishHeaderBtn: {
-    flexDirection: 'row',
+  publishActionBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  publishHeaderBtnText: {
-    color: Colors.white,
-    fontSize: 13,
-    fontWeight: '700',
+    justifyContent: 'center',
   },
   filterSection: {
     paddingVertical: 12,
