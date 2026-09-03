@@ -25,6 +25,7 @@ interface AppHeaderProps {
   onSearchChange?: (text: string) => void;
   searchPlaceholder?: string;
   onFilterPress?: () => void;
+  hasActiveFilters?: boolean;
 }
 
 export default function AppHeader({
@@ -40,6 +41,7 @@ export default function AppHeader({
   onSearchChange,
   searchPlaceholder,
   onFilterPress,
+  hasActiveFilters = false,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -150,11 +152,19 @@ export default function AppHeader({
             </TouchableOpacity>
           ) : null}
           <TouchableOpacity
-            style={styles.filterBtn}
+            style={[
+              styles.filterBtn,
+              hasActiveFilters && styles.filterBtnActive,
+            ]}
             activeOpacity={0.8}
             onPress={onFilterPress}
           >
-            <Ionicons name="options-outline" size={18} color={Colors.purple} />
+            <Ionicons
+              name="options-outline"
+              size={18}
+              color={hasActiveFilters ? Colors.white : Colors.purple}
+            />
+            {hasActiveFilters && <View style={styles.filterDot} />}
           </TouchableOpacity>
         </View>
       )}
@@ -266,6 +276,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
+    position: 'relative',
+  },
+  filterBtnActive: {
+    backgroundColor: Colors.accent,
+  },
+  filterDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
   },
   logoImage: {
     width: 100,

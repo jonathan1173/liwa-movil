@@ -134,6 +134,18 @@ export async function getStates() {
   return data ?? [];
 }
 
+export async function getCategories(): Promise<{ id: number; name: string }[]> {
+  const { data, error } = await supabase.from('category').select('id, name').order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getConditions(): Promise<{ id: number; name: string }[]> {
+  const { data, error } = await supabase.from('product_condition').select('id, name').order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
 // ─── Product helpers ──────────────────────────────────────────────────────────
 
 export interface ProductState {
@@ -229,6 +241,9 @@ export async function getBarterProducts(): Promise<Product[]> {
 
   return (data ?? []).map((p: any) => ({
     ...p,
+    state: Array.isArray(p.state) ? (p.state[0] ?? null) : (p.state ?? null),
+    category: Array.isArray(p.category) ? (p.category[0] ?? null) : (p.category ?? null),
+    condition: Array.isArray(p.condition) ? (p.condition[0] ?? null) : (p.condition ?? null),
     status: p.state?.name ?? 'Activo',
     barter: true,
     images: formatProductImages(p.images),

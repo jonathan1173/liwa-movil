@@ -1,4 +1,5 @@
 import AppHeader from '@/components/AppHeader';
+import ProductFilterModal, { FilterState } from '@/components/ProductFilterModal';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getProducts, Product } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,6 +78,11 @@ export default function ExplorarScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    category: null,
+    condition: null,
+  });
 
   async function fetchProducts(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
@@ -100,17 +106,36 @@ export default function ExplorarScreen() {
     }, [])
   );
 
-  // Filtrado de productos en tiempo real según la búsqueda
+  // Filtrado de productos en tiempo real según búsqueda, categoría y estado
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    const query = searchQuery.toLowerCase().trim();
-    return products.filter((p) => {
-      const titleMatch = p.title.toLowerCase().includes(query);
-      const descMatch = p.description?.toLowerCase().includes(query);
-      const catMatch = p.category?.name.toLowerCase().includes(query);
-      return titleMatch || descMatch || catMatch;
-    });
-  }, [products, searchQuery]);
+    let list = products;
+
+    if (filters.category) {
+      list = list.filter(
+        (p) =>
+          p.category?.name?.toLowerCase() === filters.category?.toLowerCase()
+      );
+    }
+
+    if (filters.condition) {
+      list = list.filter(
+        (p) =>
+          p.condition?.name?.toLowerCase() === filters.condition?.toLowerCase()
+      );
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      list = list.filter((p) => {
+        const titleMatch = p.title.toLowerCase().includes(query);
+        const descMatch = p.description?.toLowerCase().includes(query);
+        const catMatch = p.category?.name.toLowerCase().includes(query);
+        return titleMatch || descMatch || catMatch;
+      });
+    }
+
+    return list;
+  }, [products, searchQuery, filters]);
 
   const rows: Product[][] = [];
   for (let i = 0; i < filteredProducts.length; i += 2) {
@@ -126,6 +151,8 @@ export default function ExplorarScreen() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Buscar productos y servicios..."
+        onFilterPress={() => setFilterModalVisible(true)}
+        hasActiveFilters={Boolean(filters.category || filters.condition)}
       />
 
       <ScrollView
@@ -140,6 +167,49 @@ export default function ExplorarScreen() {
           />
         }
       >
+        {/* Chips de Filtros Activos si hay alguno seleccionado */}
+        {(filters.category || filters.condition) && (
+          <View style={styles.activeFiltersRow}>
+            {filters.category && (
+              <TouchableOpacity
+                style={styles.activeFilterChip}
+                onPress={() =>
+                  setFilters((prev) => ({ ...prev, category: null }))
+                }
+              >
+                <Ionicons name="grid-outline" size={13} color="#FFFFFF" />
+                <Text style={styles.activeFilterChipText}>
+                  {filters.category}
+                </Text>
+                <Ionicons name="close-circle" size={14} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+            {filters.condition && (
+              <TouchableOpacity
+                style={[
+                  styles.activeFilterChip,
+                  { backgroundColor: Colors.accent },
+                ]}
+                onPress={() =>
+                  setFilters((prev) => ({ ...prev, condition: null }))
+                }
+              >
+                <Ionicons name="sparkles-outline" size={13} color="#FFFFFF" />
+                <Text style={styles.activeFilterChipText}>
+                  {filters.condition}
+                </Text>
+                <Ionicons name="close-circle" size={14} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => setFilters({ category: null, condition: null })}
+              style={styles.clearAllFiltersBtn}
+            >
+              <Text style={styles.clearAllFiltersText}>Limpiar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Encabezado de la lista */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Productos y Servicios</Text>
@@ -187,6 +257,13 @@ export default function ExplorarScreen() {
           </View>
         ))}
       </ScrollView>
+
+      <ProductFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        filters={filters}
+        onApply={(newFilters) => setFilters(newFilters)}
+      />
     </SafeAreaView>
   );
 }
@@ -341,5 +418,35 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
     textTransform: 'uppercase',
+  },
+  activeFiltersRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.purple,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 5,
+  },
+  activeFilterChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  clearAllFiltersBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  clearAllFiltersText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.accent,
   },
 });
