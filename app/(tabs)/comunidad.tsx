@@ -100,20 +100,24 @@ export default function ComunidadScreen() {
     }
   }
 
-  const renderHeaderRight = (
+  const renderHeaderLeft = (
     <TouchableOpacity
       style={styles.publishHeaderBtn}
       onPress={() => setShowCreateModal(true)}
       activeOpacity={0.8}
     >
-      <Ionicons name="add-circle-outline" size={20} color={Colors.white} />
+      <Ionicons name="add-circle-outline" size={18} color={Colors.white} />
       <Text style={styles.publishHeaderBtnText}>Publicar</Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title="Comunidad" rightElement={renderHeaderRight} />
+      <AppHeader
+        title="Comunidad"
+        leftElement={renderHeaderLeft}
+        showNotif={true}
+      />
 
       {/* Bar de Filtros */}
       <View style={styles.filterSection}>

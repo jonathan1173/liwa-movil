@@ -119,7 +119,14 @@ export default function ExplorarScreen() {
 
   return (
     <SafeAreaView style={[neumorphicStyles.screen, styles.screenBg]}>
-      <AppHeader title="Explorar" />
+      <AppHeader
+        title="Explorar"
+        subtitle="CATÁLOGO"
+        showSearch={true}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Buscar productos y servicios..."
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -133,25 +140,6 @@ export default function ExplorarScreen() {
           />
         }
       >
-        {/* Barra de Búsqueda Funcional */}
-        <View style={styles.searchBarContainer}>
-          <Ionicons name="search-outline" size={20} color={Colors.magenta} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar productos y servicios…"
-            placeholderTextColor={Colors.textPlaceholder}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
-              <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-
         {/* Encabezado de la lista */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Productos y Servicios</Text>

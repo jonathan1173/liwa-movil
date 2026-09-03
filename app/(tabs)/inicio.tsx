@@ -55,11 +55,11 @@ export default function InicioScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Cabecera superior: MARKET & RED + Campana Notificaciones + Avatar JD */}
+        {/* Cabecera superior: Logo Liwa + Campana Notificaciones + Avatar JD */}
         <View style={styles.topHeader}>
           <View style={styles.brandRow}>
             <Image
-              source={require('../../assets/images/liwa_nombre.png')}
+              source={require('@/assets/images/liwa_nombre.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
