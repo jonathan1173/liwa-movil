@@ -1,111 +1,199 @@
-import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
+import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InicioScreen() {
-  return (
-    <SafeAreaView style={neumorphicStyles.screen}>
-      {/* < AppHeader title="Inicio" showBack={false} showNotif={true} /> */}
+  const [initials, setInitials] = useState('JD');
 
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+          .from('profile')
+          .select('full_name, username')
+          .eq('id', user.id)
+          .single();
+
+        if (data?.full_name?.trim()) {
+          const parts = data.full_name.trim().split(/\s+/);
+          if (parts.length >= 2) {
+            setInitials(`${parts[0][0]}${parts[1][0]}`.toUpperCase());
+          } else if (parts[0].length > 0) {
+            setInitials(parts[0].slice(0, 2).toUpperCase());
+          }
+        } else if (data?.username?.trim()) {
+          setInitials(data.username.trim().slice(0, 2).toUpperCase());
+        }
+      } catch {
+        // En caso de error o sin sesión activa se mantiene 'JD' de la maqueta
+      }
+    }
+    loadUserData();
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar style="dark" />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Saludo principal */}
-        <View style={styles.greetingContainer}>
-          <Text style={styles.greetingTitle}>¡Hola!</Text>
-          <Text style={styles.greetingSubtitle}>¿En qué podemos ayudarte?</Text>
+        {/* Cabecera superior: MARKET & RED + Campana Notificaciones + Avatar JD */}
+        <View style={styles.topHeader}>
+          <View style={styles.brandRow}>
+            <Image
+              source={require('../../assets/images/liwa_nombre.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
+
+          <View style={styles.headerActions}>
+            {/* Botón de Notificaciones con punto indicador rosa */}
+            <TouchableOpacity
+              style={styles.bellButton}
+              activeOpacity={0.75}
+              onPress={() => router.push('/(tabs)/notificaciones' as any)}
+            >
+              <Ionicons name="notifications-outline" size={20} color="#4B5563" />
+              {/* <View style={styles.bellBadge} /> */}
+            </TouchableOpacity>
+
+            {/* Avatar circular de perfil con iniciales */}
+            <TouchableOpacity
+              style={styles.avatarButton}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/perfil' as any)}
+            >
+              <Text style={styles.avatarText}>{initials}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Lista / Grid de Menú con Tarjetas */}
-        <View style={styles.menuContainer}>
-          {/* Tarjeta 1: Explorar */}
+        {/* Saludo principal */}
+        <View style={styles.greetingSection}>
+          <Text style={styles.greetingTitle}>¡Hola!</Text>
+          <Text style={styles.greetingSubtitle}>¿En qué podemos ayudarte hoy?</Text>
+        </View>
+
+        {/* Barra de Búsqueda */}
+        <TouchableOpacity
+          style={styles.searchBar}
+          activeOpacity={0.85}
+          onPress={() => router.push('/(tabs)/explorar' as any)}
+        >
+          <Ionicons name="search-outline" size={19} color="#9CA3AF" style={styles.searchIcon} />
+          <Text style={styles.searchPlaceholder}>Buscar productos, servicios o personas...</Text>
+        </TouchableOpacity>
+
+        {/* Tarjetas de Navegación Vertical */}
+        <View style={styles.cardsContainer}>
+          {/* 1. Explorar */}
           <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#E91E63' }]}
+            style={[styles.menuCard, { backgroundColor: '#D80064' }]}
             activeOpacity={0.88}
             onPress={() => router.push('/(tabs)/explorar' as any)}
           >
             <View style={styles.cardIconBox}>
-              <Ionicons name="bag-handle-outline" size={42} color={Colors.white} />
+              <Ionicons name="bag-outline" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.cardTextBox}>
               <Text style={styles.cardTitle}>Explorar</Text>
               <Text style={styles.cardSubtitle}>productos y servicios</Text>
             </View>
+            <View style={styles.cardArrowBox}>
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 2: Publicar */}
+          {/* 2. Publicar */}
           <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#2B2B2B' }]}
+            style={[styles.menuCard, { backgroundColor: '#212529' }]}
             activeOpacity={0.88}
             onPress={() => router.push('/(tabs)/publicar' as any)}
           >
             <View style={styles.cardIconBox}>
-              <Ionicons name="add-circle-outline" size={42} color={Colors.white} />
+              <Ionicons name="add-circle-outline" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.cardTextBox}>
               <Text style={styles.cardTitle}>Publicar</Text>
               <Text style={styles.cardSubtitle}>tu creación</Text>
             </View>
+            <View style={styles.cardArrowBox}>
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 3: Trueque */}
+          {/* 3. Trueque */}
           <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#7CB342' }]}
+            style={[styles.menuCard, { backgroundColor: '#72A619' }]}
             activeOpacity={0.88}
             onPress={() => router.push('/(tabs)/trueque' as any)}
           >
             <View style={styles.cardIconBox}>
-              <Ionicons name="swap-horizontal-outline" size={42} color={Colors.white} />
+              <Ionicons name="swap-vertical" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.cardTextBox}>
               <Text style={styles.cardTitle}>Trueque</Text>
               <Text style={styles.cardSubtitle}>intercambia productos</Text>
             </View>
+            <View style={styles.cardArrowBox}>
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
 
-          {/* Tarjeta 4: Mapa de Vendedores */}
+          {/* 4. Mapa */}
           <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#d8cb1b' }]}
+            style={[styles.menuCard, { backgroundColor: '#C89211' }]}
             activeOpacity={0.88}
             onPress={() => router.push('/mapa-vendedores' as any)}
           >
             <View style={styles.cardIconBox}>
-              <Ionicons name="map-outline" size={42} color={Colors.white} />
+              <Ionicons name="map-outline" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.cardTextBox}>
               <Text style={styles.cardTitle}>Mapa</Text>
               <Text style={styles.cardSubtitle}>ubica a los vendedores</Text>
             </View>
+            <View style={styles.cardArrowBox}>
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
 
-
-          {/* Tarjeta 6: Comunidad */}
+          {/* 5. Comunidad */}
           <TouchableOpacity
-            style={[styles.menuCard, { backgroundColor: '#2b5397' }]}
+            style={[styles.menuCard, { backgroundColor: '#4B187B' }]}
             activeOpacity={0.88}
             onPress={() => router.push('/(tabs)/comunidad' as any)}
           >
             <View style={styles.cardIconBox}>
-              <Ionicons name="people-outline" size={42} color={Colors.white} />
+              <Ionicons name="people-outline" size={28} color="#FFFFFF" />
             </View>
             <View style={styles.cardTextBox}>
               <Text style={styles.cardTitle}>Comunidad</Text>
               <Text style={styles.cardSubtitle}>conecta y colabora</Text>
             </View>
+            <View style={styles.cardArrowBox}>
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
-
-
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -113,67 +201,179 @@ export default function InicioScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  logoImage: {
+    width: 100,
+    height: 40,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 40,
+    paddingTop: 10,
+    paddingBottom: 28,
   },
-  greetingContainer: {
-    marginBottom: 24,
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  brandDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#E60067',
+    marginRight: 8,
+  },
+  brandText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8E8E93',
+    letterSpacing: 0.8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  bellButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F2',
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: 7,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#E60067',
+  },
+  avatarButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#80005C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  avatarText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  greetingSection: {
     marginTop: 18,
+    marginBottom: 16,
   },
   greetingTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#3B1E54',
-    letterSpacing: -0.5,
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#261353',
+    letterSpacing: -0.6,
   },
   greetingSubtitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#3B1E54',
-    marginTop: 2,
-    letterSpacing: -0.4,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 4,
+    letterSpacing: -0.2,
   },
-  menuContainer: {
-    gap: 16,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    height: 48,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 13.5,
+    color: '#9CA3AF',
+  },
+  cardsContainer: {
+    gap: 14,
   },
   menuCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    elevation: 4,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 4,
   },
   cardIconBox: {
-    width: 60,
-    height: 60,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   cardTextBox: {
     flex: 1,
+    marginRight: 8,
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '800',
-    color: Colors.white,
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
   cardSubtitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.92)',
     marginTop: 2,
+  },
+  cardArrowBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

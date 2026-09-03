@@ -1,40 +1,23 @@
-import { Colors } from '@/constants/NeumorphicStyles';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-
-function TabIcon({
-  name,
-  focused,
-}: {
-  name: React.ComponentProps<typeof Ionicons>['name'];
-  focused: boolean;
-}) {
-  return (
-    <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-      <Ionicons
-        name={name}
-        size={22}
-        color={focused ? Colors.white : Colors.white}
-      />
-    </View>
-  );
-}
+import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: Colors.white,
-        tabBarInactiveTintColor: Colors.white,
+        tabBarActiveTintColor: '#E60067',
+        tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          letterSpacing: 0.3,
-          marginBottom: 4,
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
           textAlign: 'center',
         },
         tabBarItemStyle: {
@@ -42,15 +25,17 @@ export default function TabLayout() {
           alignItems: 'center',
         },
         tabBarStyle: {
-          backgroundColor: Colors.purple,
-          borderTopWidth: 0,
-          height: 70,
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#F3F4F6',
+          height: Platform.OS === 'ios' ? 62 + insets.bottom : 68,
           paddingTop: 6,
-          shadowColor: Colors.shadowDark,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.2,
-          shadowRadius: 10,
-          elevation: 12,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 6,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          elevation: 10,
         },
       }}
     >
@@ -60,7 +45,11 @@ export default function TabLayout() {
         options={{
           title: 'Inicio',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={23}
+              color={focused ? '#E60067' : '#9CA3AF'}
+            />
           ),
         }}
       />
@@ -71,18 +60,26 @@ export default function TabLayout() {
         options={{
           title: 'Explorar',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />
+            <Ionicons
+              name={focused ? 'search' : 'search-outline'}
+              size={23}
+              color={focused ? '#E60067' : '#9CA3AF'}
+            />
           ),
         }}
       />
 
-      {/* ── Publicar ── */}
+      {/* ── Publicar (Botón Central Destacado) ── */}
       <Tabs.Screen
         name="publicar"
         options={{
           title: 'Publicar',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'add-circle' : 'add-circle-outline'} focused={focused} />
+          tabBarIcon: () => (
+            <View style={styles.publishIconWrapper}>
+              <View style={styles.publishCircle}>
+                <Ionicons name="add" size={26} color="#FFFFFF" />
+              </View>
+            </View>
           ),
         }}
       />
@@ -93,7 +90,11 @@ export default function TabLayout() {
         options={{
           title: 'Comunidad',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'people' : 'people-outline'} focused={focused} />
+            <Ionicons
+              name={focused ? 'people' : 'people-outline'}
+              size={23}
+              color={focused ? '#E60067' : '#9CA3AF'}
+            />
           ),
         }}
       />
@@ -104,7 +105,11 @@ export default function TabLayout() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={23}
+              color={focused ? '#E60067' : '#9CA3AF'}
+            />
           ),
         }}
       />
@@ -120,20 +125,24 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  iconWrapper: {
-    width: 40,
-    height: 32,
-    borderRadius: 12,
+  publishIconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    marginTop: -4,
   },
-  iconWrapperActive: {
-    backgroundColor: Colors.accent,
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 5,
+  publishCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 22,
+    backgroundColor: '#E60067',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    shadowColor: '#E60067',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 10,
   },
 });
