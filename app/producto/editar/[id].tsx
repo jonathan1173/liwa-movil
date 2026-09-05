@@ -3,6 +3,8 @@ import { getProductById, supabase, updateProductDetails, updateProductImages } f
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { MorphIcon } from 'morphicons/react-native';
+import { ArrowLeft } from 'lucide';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,12 +17,14 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MAX_IMAGES = 4;
 const SLOT_SIZE = 96;
@@ -137,6 +141,7 @@ const BARTER_OPTIONS: Option[] = [
 ];
 
 export default function EditarProductoScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [loadingProduct, setLoadingProduct] = useState(true);
@@ -374,25 +379,31 @@ export default function EditarProductoScreen() {
   }
 
   return (
-    <SafeAreaView style={neumorphicStyles.screen}>
+    <View style={styles.screenPurple}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.purple} />
+
+      {/* ── Header Morado Liwa ──────────────────────────────────────── */}
+      <View style={[styles.headerPurple, { paddingTop: insets.top + 6 }]}>
+        <TouchableOpacity
+          style={styles.backCirclePurple}
+          onPress={handleBack}
+          activeOpacity={0.85}
+        >
+          <MorphIcon icon={ArrowLeft} size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitlePurple}>Editar publicación</Text>
+        <View style={{ width: 42 }} />
+      </View>
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.backCircle} onPress={handleBack} activeOpacity={0.85}>
-              <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-            </TouchableOpacity>
-            <Text style={neumorphicStyles.title}>Editar publicación</Text>
-            <View style={{ width: 42 }} />
-          </View>
-
           {/* Fotos */}
           <View style={[neumorphicStyles.card, styles.section]}>
             <Text style={[neumorphicStyles.label, { marginBottom: 12 }]}>
@@ -548,38 +559,50 @@ export default function EditarProductoScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 48,
-    gap: 16,
+  screenPurple: {
+    flex: 1,
+    backgroundColor: '#FAF9FC',
   },
-  header: {
+  headerPurple: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    backgroundColor: Colors.purple,
+    shadowColor: Colors.purple,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  backCircle: {
+  backCirclePurple: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.background,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
+  },
+  headerTitlePurple: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 48,
+    gap: 16,
   },
   section: {
     marginHorizontal: 0,

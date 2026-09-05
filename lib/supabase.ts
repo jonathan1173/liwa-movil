@@ -298,7 +298,7 @@ export async function getMyProducts(userId: string): Promise<Product[]> {
 
 export interface ProductDetail extends Product {
   user_id: string;
-  seller: { full_name: string | null } | null;
+  seller: { full_name: string | null; phone?: string | null } | null;
 }
 
 export async function getProductById(id: number): Promise<ProductDetail> {
@@ -317,7 +317,7 @@ export async function getProductById(id: number): Promise<ProductDetail> {
       condition:condition_id ( name ),
       state:state_id ( id, name ),
       images:product_image ( url ),
-      seller:user_id ( full_name )
+      seller:user_id ( full_name, phone )
     `)
     .eq('id', id)
     .single();

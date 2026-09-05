@@ -1,10 +1,11 @@
 import AppHeader from '@/components/AppHeader';
+import PaginationControls from '@/components/PaginationControls';
 import ProductFilterModal, { FilterState } from '@/components/ProductFilterModal';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
 import { getProducts, Product } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -137,10 +138,31 @@ export default function ExplorarScreen() {
     return list;
   }, [products, searchQuery, filters]);
 
+  const ITEMS_PER_PAGE = 8;
+  const [currentPage, setCurrentPage] = useState(1);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Reiniciar a página 1 cuando cambia la búsqueda o los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filters]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
+
   const rows: Product[][] = [];
-  for (let i = 0; i < filteredProducts.length; i += 2) {
-    rows.push(filteredProducts.slice(i, i + 2));
+  for (let i = 0; i < paginatedProducts.length; i += 2) {
+    rows.push(paginatedProducts.slice(i, i + 2));
   }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
 
   return (
     <SafeAreaView style={[neumorphicStyles.screen, styles.screenBg]}>
@@ -156,6 +178,7 @@ export default function ExplorarScreen() {
       />
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -256,6 +279,17 @@ export default function ExplorarScreen() {
             {row.length === 1 && <View style={styles.col} />}
           </View>
         ))}
+
+        {/* Controles de Paginación */}
+        {!loading && !error && filteredProducts.length > 0 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            totalItems={filteredProducts.length}
+            itemName="productos"
+          />
+        )}
       </ScrollView>
 
       <ProductFilterModal

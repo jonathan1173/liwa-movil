@@ -10,6 +10,8 @@ import {
 } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { MorphIcon } from 'morphicons/react-native';
+import { Heart, ArrowLeft } from 'lucide';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,10 +19,12 @@ import {
   BackHandler,
   Dimensions,
   Image,
+  Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -94,7 +98,7 @@ function ImageCarousel({ images }: { images: { url: string }[] }) {
 }
 
 // ─── Seller Card ──────────────────────────────────────────────────────────────
-function SellerCard({ name }: { name: string | null }) {
+function SellerCard({ name, phone }: { name: string | null; phone?: string | null }) {
   const initials = name
     ? name
       .split(' ')
@@ -106,8 +110,8 @@ function SellerCard({ name }: { name: string | null }) {
 
   return (
     <View style={[neumorphicStyles.card, styles.sellerCard]}>
-      <Text style={[neumorphicStyles.label, { marginBottom: 14 }]}>
-        Vendedor
+      <Text style={[neumorphicStyles.label, { marginBottom: 12, color: Colors.purple }]}>
+        Información del Vendedor
       </Text>
       <View style={styles.sellerRow}>
         <View style={styles.sellerAvatar}>
@@ -115,11 +119,13 @@ function SellerCard({ name }: { name: string | null }) {
         </View>
         <View style={styles.sellerInfo}>
           <Text style={styles.sellerName}>{name ?? 'Usuario Liwa'}</Text>
-          {/* <Text style={styles.sellerSub}>Miembro de Liwa</Text> */}
+          <View style={styles.sellerVerifiedRow}>
+            <Ionicons name="checkmark-circle" size={14} color={Colors.green} />
+            <Text style={styles.sellerSub}>
+              {phone ? 'WhatsApp disponible' : 'Vendedor Liwa'}
+            </Text>
+          </View>
         </View>
-        {/* <View style={styles.sellerBadge}>
-          <Ionicons name="checkmark-circle" size={18} color={Colors.accent} />
-        </View> */}
       </View>
     </View>
   );
@@ -275,48 +281,64 @@ export default function ProductoDetailScreen() {
     );
   }
 
-  return (
-    <SafeAreaView style={neumorphicStyles.screen}>
+  const handleContactSeller = () => {
+    const phone = product?.seller?.phone;
+    if (!phone || !phone.trim()) {
+      Alert.alert(
+        'Teléfono no disponible',
+        'El vendedor aún no ha registrado su número de teléfono en su perfil.'
+      );
+      return;
+    }
 
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+    const cleanDigits = phone.replace(/\D/g, '');
+    const phoneWithCode = cleanDigits.length === 8 ? `505${cleanDigits}` : cleanDigits;
+    const msg = `¡Hola! Vi tu producto "${product.title}" en Liwa y me interesa obtener más información.`;
+    const whatsappUrl = `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(msg)}`;
+
+    Linking.canOpenURL(whatsappUrl)
+      .then((supported) => {
+        if (supported) {
+          Linking.openURL(whatsappUrl);
+        } else {
+          Linking.openURL(`https://wa.me/${phoneWithCode}`);
+        }
+      })
+      .catch(() => {
+        Linking.openURL(whatsappUrl);
+      });
+  };
+
+  return (
+    <SafeAreaView style={styles.screenPurple}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.purple} />
+
+      {/* ── Header Morado Liwa ──────────────────────────────────────── */}
+      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
         <TouchableOpacity
           style={styles.headerBtn}
           onPress={handleBack}
           activeOpacity={0.85}
         >
-          <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+          <MorphIcon icon={ArrowLeft} size={20} color="#FFFFFF" />
         </TouchableOpacity>
 
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          Detalle del producto
+        </Text>
 
-
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          {/* Botón de Trueque  */}
-
-          {/* {product?.barter && !isOwner && (
-            <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="swap-horizontal" size={22} color={Colors.accent} />
-            </TouchableOpacity>
-          )} */}
-
-          {/* Botón de Favorito (corazón) */}
-          <TouchableOpacity
-            style={styles.headerBtn}
-            onPress={toggleFavorite}
-            activeOpacity={0.85}
-            disabled={favLoading}
-          >
-            <Ionicons
-              name={favorited ? 'heart' : 'heart-outline'}
-              size={22}
-              color={favorited ? '#e05c5c' : Colors.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.headerBtn, favorited && styles.headerBtnFavorited]}
+          onPress={toggleFavorite}
+          activeOpacity={0.85}
+          disabled={favLoading}
+        >
+          <MorphIcon
+            icon={Heart}
+            size={20}
+            color={favorited ? Colors.magenta : '#FFFFFF'}
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -329,20 +351,26 @@ export default function ProductoDetailScreen() {
         {/* Content */}
         <View style={styles.content}>
 
-          {/* Badges row */}
+          {/* Badges con Paleta de Colores Liwa */}
           <View style={styles.badgesRow}>
             {product.category && (
-              <View style={styles.badge}>
-                <Ionicons name="grid-outline" size={12} color={Colors.textSecondary} />
-                <Text style={styles.badgeText}>{product.category.name}</Text>
+              <View style={styles.categoryBadge}>
+                <Ionicons name="grid-outline" size={13} color={Colors.purple} />
+                <Text style={styles.categoryBadgeText}>{product.category.name}</Text>
               </View>
             )}
             {product.condition && (
-              <View style={[styles.badge, styles.badgeAccent]}>
-                <Ionicons name="layers-outline" size={12} color={Colors.white} />
-                <Text style={[styles.badgeText, { color: Colors.white }]}>
+              <View style={styles.conditionBadge}>
+                <Ionicons name="sparkles-outline" size={13} color="#4D7C0F" />
+                <Text style={styles.conditionBadgeText}>
                   {product.condition.name}
                 </Text>
+              </View>
+            )}
+            {product.barter && (
+              <View style={styles.barterBadge}>
+                <Ionicons name="swap-horizontal" size={13} color={Colors.magenta} />
+                <Text style={styles.barterBadgeText}>Acepta Trueque</Text>
               </View>
             )}
           </View>
@@ -350,9 +378,16 @@ export default function ProductoDetailScreen() {
           {/* Title */}
           <Text style={styles.title}>{product.title}</Text>
 
-          {/* Price */}
+          {/* Price Box con Acento Magenta */}
           <View style={styles.priceBox}>
-            <Text style={styles.priceLabel}>Precio</Text>
+            <View style={styles.priceHeaderRow}>
+              <Text style={styles.priceLabel}>PRECIO</Text>
+              {product.status && (
+                <View style={styles.statusPill}>
+                  <Text style={styles.statusPillText}>{product.status}</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.price}>
               C$ {product.price.toLocaleString('es-GT', {
                 minimumFractionDigits: 2,
@@ -364,7 +399,7 @@ export default function ProductoDetailScreen() {
           {/* Description */}
           {hasDescription && (
             <View style={[neumorphicStyles.card, styles.descCard]}>
-              <Text style={[neumorphicStyles.label, { marginBottom: 10 }]}>
+              <Text style={[neumorphicStyles.label, { marginBottom: 10, color: Colors.purple }]}>
                 Descripción
               </Text>
               <Text style={styles.description}>{product.description}</Text>
@@ -372,7 +407,12 @@ export default function ProductoDetailScreen() {
           )}
 
           {/* Seller — solo visible para otros usuarios */}
-          {!isOwner && <SellerCard name={product.seller?.full_name ?? null} />}
+          {!isOwner && (
+            <SellerCard
+              name={product.seller?.full_name ?? null}
+              phone={product.seller?.phone ?? null}
+            />
+          )}
 
           {/* Acciones: Editar/Eliminar (dueño) o Contactar vendedor (otros) */}
           {isOwner ? (
@@ -388,7 +428,7 @@ export default function ProductoDetailScreen() {
                   color={Colors.white}
                   style={{ marginRight: 8 }}
                 />
-                <Text style={neumorphicStyles.buttonText}>Editar</Text>
+                <Text style={neumorphicStyles.buttonText}>Editar publicación</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -402,15 +442,14 @@ export default function ProductoDetailScreen() {
                   color="#e05c5c"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.deleteBtnText}>Eliminar</Text>
+                <Text style={styles.deleteBtnText}>Eliminar publicación</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={{ gap: 10, marginTop: 4 }}>
+            <View style={styles.buyerActions}>
               {product?.barter && (
                 <TouchableOpacity
-
-                  style={[neumorphicStyles.button, styles.contactBtn, { backgroundColor: '#8e44ad' }]}
+                  style={[styles.barterBtn]}
                   activeOpacity={0.85}
                   onPress={() => router.push(`/trueque-inteligente?id=${id}` as any)}
                 >
@@ -420,21 +459,25 @@ export default function ProductoDetailScreen() {
                     color={Colors.white}
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={neumorphicStyles.buttonText}>Ofrecer Trueque</Text>
+                  <Text style={styles.actionBtnText}>Ofrecer Trueque</Text>
                 </TouchableOpacity>
               )}
 
+              {/* Botón de Contactar al vendedor por WhatsApp */}
               <TouchableOpacity
-                style={[neumorphicStyles.button, styles.contactBtn]}
+                style={styles.whatsappBtn}
                 activeOpacity={0.85}
+                onPress={handleContactSeller}
               >
                 <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={20}
-                  color={Colors.white}
-                  style={{ marginRight: 8 }}
+                  name="logo-whatsapp"
+                  size={22}
+                  color="#FFFFFF"
+                  style={{ marginRight: 10 }}
                 />
-                <Text style={neumorphicStyles.buttonText}>Contactar vendedor</Text>
+                <Text style={styles.whatsappBtnText}>
+                  Contactar al vendedor por WhatsApp
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -453,38 +496,41 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
 
+  screenPurple: {
+    flex: 1,
+    backgroundColor: '#FAF9FC',
+  },
+
   // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 5,
-    backgroundColor: Colors.background,
-    shadowColor: Colors.shadowDark,
+    paddingBottom: 12,
+    backgroundColor: Colors.purple,
+    shadowColor: Colors.purple,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   headerBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: Colors.background,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
+  },
+  headerBtnFavorited: {
+    backgroundColor: 'rgba(236, 0, 108, 0.25)',
   },
   headerTitle: {
     flex: 1,
-    color: Colors.textPrimary,
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.2,
     textAlign: 'center',
     marginHorizontal: 8,
@@ -551,68 +597,112 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  // Badges
+  // Badges con paleta Liwa
   badgesRow: {
     flexDirection: 'row',
     gap: 8,
     flexWrap: 'wrap',
   },
-  badge: {
+  categoryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F3E8FF',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 3, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 3,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 25, 140, 0.15)',
   },
-  badgeAccent: {
-    backgroundColor: Colors.accent,
-  },
-  badgeText: {
-    color: Colors.textSecondary,
+  categoryBadgeText: {
+    color: Colors.purple,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  conditionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(122, 175, 0, 0.25)',
+  },
+  conditionBadgeText: {
+    color: '#3F6212',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  barterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FDF2F8',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 0, 108, 0.2)',
+  },
+  barterBadgeText: {
+    color: Colors.magenta,
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   // Title
   title: {
-    color: Colors.textPrimary,
+    color: '#111827',
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.4,
     lineHeight: 30,
   },
 
-  // Price
+  // Price Box
   priceBox: {
-    backgroundColor: Colors.background,
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 18,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.magenta,
     shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 6, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  priceLabel: {
-    color: Colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+  priceHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 4,
   },
+  priceLabel: {
+    color: Colors.magenta,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  statusPill: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  statusPillText: {
+    color: '#059669',
+    fontSize: 11,
+    fontWeight: '700',
+  },
   price: {
-    color: Colors.textPrimary,
-    fontSize: 36,
+    color: '#111827',
+    fontSize: 32,
     fontWeight: '900',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
 
   // Description
@@ -639,14 +729,14 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.purple,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.shadowDark,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowColor: Colors.purple,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   sellerInitials: {
     color: Colors.white,
@@ -662,25 +752,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  sellerVerifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 3,
+  },
   sellerSub: {
     color: Colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
-    marginTop: 2,
-  },
-  sellerBadge: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
-  // Contact button
-  contactBtn: {
+  // Buyer actions (barter + WhatsApp)
+  buyerActions: {
+    gap: 12,
+    marginTop: 6,
+  },
+  barterBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    backgroundColor: Colors.purple,
+    borderRadius: 16,
+    paddingVertical: 15,
+    shadowColor: Colors.purple,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  actionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  whatsappBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    borderRadius: 16,
+    paddingVertical: 15,
+    shadowColor: '#25D366',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  whatsappBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 
   // Owner actions (edit + delete)
