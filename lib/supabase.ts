@@ -1134,7 +1134,7 @@ export const FALLBACK_BIBLIOTECA_ITEMS: BibliotecaItem[] = [
     id: 1,
     titulo: 'Cartilla Mujer y Derechos - Creole',
     archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Mujer%20y%20Derechos%20-%20Creole.jpg',
     tamano: '4 MB',
     created_at: new Date().toISOString(),
   },
@@ -1142,7 +1142,7 @@ export const FALLBACK_BIBLIOTECA_ITEMS: BibliotecaItem[] = [
     id: 2,
     titulo: 'Cartilla Mujer y Derechos - Miskito',
     archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=400&q=80',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Mujer%20y%20Derechos%20-%20Creole.jpg',
     tamano: '4 MB',
     created_at: new Date().toISOString(),
   },
@@ -1150,7 +1150,7 @@ export const FALLBACK_BIBLIOTECA_ITEMS: BibliotecaItem[] = [
     id: 3,
     titulo: 'Guía de Emprendimiento y Finanzas Básicas',
     archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&q=80',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Brochure%20Mujeres%20Aprendiendo,%20Emprendiendo,%20Trabajando%20y%20Prosperando.jpg',
     tamano: '2.5 MB',
     created_at: new Date().toISOString(),
   },
@@ -1158,7 +1158,39 @@ export const FALLBACK_BIBLIOTECA_ITEMS: BibliotecaItem[] = [
     id: 4,
     titulo: 'Manual de Trueque y Comercio Comunitario',
     archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&q=80',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Galeria%20Mujeres%20Bicentenarias.jpg',
+    tamano: '3.8 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 5,
+    titulo: 'Cartilla Aprendamos de Genero',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Aprendamos%20de%20Genero.jpg',
+    tamano: '3.8 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 6,
+    titulo: 'Cartilla para la Promoción de Valores Equidad y Complementariedad',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20para%20la%20Promoci%C3%B3n%20de%20Valores%20Equidad%20y%20Complementariedad.jpg',
+    tamano: '3.8 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 7,
+    titulo: 'Cartilla Mujer, Derechos y Empoderamiento Económico',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Mujer,%20Derechos%20y%20Empoderamiento%20Econ%C3%B3mico.jpg',
+    tamano: '3.8 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 8,
+    titulo: 'Brochure Cuido Amoroso de l@s Adult@s Mayores',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Brochure%20Cuido%20Amoroso%20de%20l@s%20Adult@s%20Mayores.jpg',
     tamano: '3.8 MB',
     created_at: new Date().toISOString(),
   },
@@ -1185,4 +1217,4 @@ export async function getBibliotecaItems(): Promise<BibliotecaItem[]> {
     console.warn('Exception in getBibliotecaItems, using fallback data:', err);
     return FALLBACK_BIBLIOTECA_ITEMS;
   }
-}
+}
