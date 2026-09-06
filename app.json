@@ -2,7 +2,7 @@
   "expo": {
     "name": "liwa",
     "slug": "liwa",
-    "version": "7.5.0",
+    "version": "8.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/liwa_color.png",
     "scheme": "liwa",
