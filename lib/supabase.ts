@@ -1117,3 +1117,72 @@ export async function addCommunityComment(postId: number, content: string, userI
   const newCount = (currentPost?.comments_count ?? 0) + 1;
   await supabase.from('community_post').update({ comments_count: newCount }).eq('id', postId);
 }
+
+// ─── Biblioteca Helpers ──────────────────────────────────────────────────────
+
+export interface BibliotecaItem {
+  id: number;
+  titulo: string;
+  archivo_url: string;
+  portada_url?: string | null;
+  tamano?: string | null;
+  created_at?: string;
+}
+
+export const FALLBACK_BIBLIOTECA_ITEMS: BibliotecaItem[] = [
+  {
+    id: 1,
+    titulo: 'Cartilla Mujer y Derechos - Creole',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
+    tamano: '4 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    titulo: 'Cartilla Mujer y Derechos - Miskito',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=400&q=80',
+    tamano: '4 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 3,
+    titulo: 'Guía de Emprendimiento y Finanzas Básicas',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&q=80',
+    tamano: '2.5 MB',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 4,
+    titulo: 'Manual de Trueque y Comercio Comunitario',
+    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    portada_url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&q=80',
+    tamano: '3.8 MB',
+    created_at: new Date().toISOString(),
+  },
+];
+
+export async function getBibliotecaItems(): Promise<BibliotecaItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('biblioteca')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.warn('Error fetching biblioteca from Supabase, using fallback data:', error.message);
+      return FALLBACK_BIBLIOTECA_ITEMS;
+    }
+
+    if (!data || data.length === 0) {
+      return FALLBACK_BIBLIOTECA_ITEMS;
+    }
+
+    return data;
+  } catch (err) {
+    console.warn('Exception in getBibliotecaItems, using fallback data:', err);
+    return FALLBACK_BIBLIOTECA_ITEMS;
+  }
+}

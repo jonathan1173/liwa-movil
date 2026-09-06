@@ -163,17 +163,37 @@ export default function ComunidadScreen() {
 
             return (
               <TouchableOpacity
-                style={[neumorphicStyles.card, styles.postCard]}
+                style={[
+                  neumorphicStyles.card,
+                  styles.postCard,
+                  isEvento ? styles.eventCard : styles.anuncioCard,
+                ]}
                 onPress={() => router.push(`/comunidad/${item.id}` as any)}
-                activeOpacity={0.9}
+                activeOpacity={0.92}
               >
+                {/* Banner superior para eventos comunitarios */}
+                {isEvento && (
+                  <View style={styles.eventTopBar}>
+                    <View style={styles.eventHighlightBadge}>
+                      <Ionicons name="sparkles" size={12} color="#7C3AED" />
+                      <Text style={styles.eventHighlightText}>EVENTO COMUNITARIO</Text>
+                    </View>
+                    <View style={styles.eventLiveDotContainer}>
+                      <View style={styles.eventLiveDot} />
+                      <Text style={styles.eventLiveText}>Activo</Text>
+                    </View>
+                  </View>
+                )}
+
                 {/* Header del post */}
                 <View style={styles.postHeader}>
-                  <View style={styles.avatarCircle}>
+                  <View style={[styles.avatarCircle, isEvento && styles.avatarCircleEvento]}>
                     <Text style={styles.avatarText}>{initial}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.authorName}>{authorName}</Text>
+                    <Text style={[styles.authorName, isEvento && styles.authorNameEvento]}>
+                      {authorName}
+                    </Text>
                     {item.city?.name && (
                       <Text style={styles.cityName}>📍 {item.city.name}</Text>
                     )}
@@ -181,7 +201,7 @@ export default function ComunidadScreen() {
 
                   <View style={[styles.typeBadge, isEvento ? styles.badgeEvento : styles.badgeAnuncio]}>
                     <Ionicons
-                      name={isEvento ? 'calendar-outline' : 'megaphone-outline'}
+                      name={isEvento ? 'calendar' : 'megaphone'}
                       size={12}
                       color={Colors.white}
                     />
@@ -190,18 +210,31 @@ export default function ComunidadScreen() {
                 </View>
 
                 {/* Contenido */}
-                <Text style={styles.postTitle}>{item.title}</Text>
-                <Text style={styles.postContent} numberOfLines={3}>
+                <Text style={[styles.postTitle, isEvento && styles.eventPostTitle]}>
+                  {item.title}
+                </Text>
+                <Text
+                  style={[styles.postContent, isEvento && styles.eventPostContent]}
+                  numberOfLines={3}
+                >
                   {item.content}
                 </Text>
 
                 {/* Imagen adjunta */}
                 {item.image_url ? (
-                  <Image source={{ uri: item.image_url }} style={styles.postImage} resizeMode="cover" />
+                  <View style={styles.imageWrapper}>
+                    <Image source={{ uri: item.image_url }} style={styles.postImage} resizeMode="cover" />
+                    {isEvento && (
+                      <View style={styles.eventImageBadge}>
+                        <Ionicons name="calendar-outline" size={12} color="#FFFFFF" />
+                        <Text style={styles.eventImageBadgeText}>Encuentro LIWA</Text>
+                      </View>
+                    )}
+                  </View>
                 ) : null}
 
                 {/* Acciones e interacción */}
-                <View style={styles.actionsRow}>
+                <View style={[styles.actionsRow, isEvento && styles.actionsRowEvento]}>
                   <TouchableOpacity
                     style={styles.actionBtn}
                     onPress={() => handleToggleLike(item)}
@@ -210,9 +243,21 @@ export default function ComunidadScreen() {
                     <Ionicons
                       name={item.is_liked_by_user ? 'heart' : 'heart-outline'}
                       size={20}
-                      color={item.is_liked_by_user ? Colors.accent : Colors.textSecondary}
+                      color={
+                        item.is_liked_by_user
+                          ? (isEvento ? '#7C3AED' : Colors.accent)
+                          : Colors.textSecondary
+                      }
                     />
-                    <Text style={[styles.actionText, item.is_liked_by_user && { color: Colors.accent }]}>
+                    <Text
+                      style={[
+                        styles.actionText,
+                        item.is_liked_by_user && {
+                          color: isEvento ? '#7C3AED' : Colors.accent,
+                          fontWeight: '700',
+                        },
+                      ]}
+                    >
                       {item.likes_count}
                     </Text>
                   </TouchableOpacity>
@@ -222,9 +267,21 @@ export default function ComunidadScreen() {
                     onPress={() => router.push(`/comunidad/${item.id}` as any)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="chatbubble-outline" size={18} color={Colors.textSecondary} />
-                    <Text style={styles.actionText}>{item.comments_count}</Text>
+                    <Ionicons
+                      name="chatbubble-outline"
+                      size={18}
+                      color={isEvento ? '#6D28D9' : Colors.textSecondary}
+                    />
+                    <Text style={[styles.actionText, isEvento && { color: '#6D28D9', fontWeight: '600' }]}>
+                      {item.comments_count}
+                    </Text>
                   </TouchableOpacity>
+
+                  {isEvento && (
+                    <View style={styles.eventDetailsBadge}>
+                      <Text style={styles.eventDetailsText}>Ver evento →</Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -394,6 +451,117 @@ const styles = StyleSheet.create({
   postCard: {
     marginHorizontal: 0,
     marginBottom: 16,
+  },
+  eventCard: {
+    backgroundColor: '#FAF5FF',
+    borderWidth: 1.5,
+    borderColor: '#E9D5FF',
+    borderLeftWidth: 6,
+    borderLeftColor: '#7C3AED',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  anuncioCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    borderLeftWidth: 5,
+    borderLeftColor: Colors.accent,
+  },
+  eventTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDE9FE',
+  },
+  eventHighlightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  eventHighlightText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#7C3AED',
+    letterSpacing: 0.6,
+  },
+  eventLiveDotContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  eventLiveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#10B981',
+  },
+  eventLiveText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  avatarCircleEvento: {
+    backgroundColor: '#7C3AED',
+  },
+  authorNameEvento: {
+    color: '#3B0764',
+    fontWeight: '800',
+  },
+  eventPostTitle: {
+    color: '#2E1065',
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  eventPostContent: {
+    color: '#4B5563',
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  eventImageBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(124, 58, 237, 0.92)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  eventImageBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  actionsRowEvento: {
+    borderTopColor: '#EDE9FE',
+    paddingTop: 12,
+  },
+  eventDetailsBadge: {
+    marginLeft: 'auto',
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  eventDetailsText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#7C3AED',
   },
   postHeader: {
     flexDirection: 'row',

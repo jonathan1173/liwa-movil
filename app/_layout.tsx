@@ -90,6 +90,7 @@ function RootLayoutNav() {
       <Stack.Screen name="mapa-vendedores" options={{ headerShown: false }} />
       <Stack.Screen name="ajustes-perfil" options={{ headerShown: false }} />
       <Stack.Screen name="comunidad/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="biblioteca" options={{ headerShown: false }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       <UpdateModal />
     </Stack>

@@ -194,6 +194,24 @@ export default function InicioScreen() {
               <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
             </View>
           </TouchableOpacity>
+
+          {/* 6. Biblioteca */}
+          <TouchableOpacity
+            style={[styles.menuCard, { backgroundColor: '#0284C7' }]}
+            activeOpacity={0.88}
+            onPress={() => router.push('/biblioteca' as any)}
+          >
+            <View style={styles.cardIconBox}>
+              <Ionicons name="book-outline" size={28} color="#FFFFFF" />
+            </View>
+            <View style={styles.cardTextBox}>
+              <Text style={styles.cardTitle}>Biblioteca</Text>
+              <Text style={styles.cardSubtitle}>archivos y guías descargables</Text>
+            </View>
+            <View style={styles.cardArrowBox}>
+              <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
