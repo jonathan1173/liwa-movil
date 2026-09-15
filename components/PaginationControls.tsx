@@ -17,7 +17,7 @@ export default function PaginationControls({
   totalPages,
   onPageChange,
   totalItems,
-  itemName = 'productos',
+  itemName = '',
 }: PaginationControlsProps) {
   if (totalPages <= 1) return null;
 
@@ -46,7 +46,7 @@ export default function PaginationControls({
     <View style={styles.container}>
       {totalItems !== undefined && (
         <Text style={styles.counterText}>
-          Página {currentPage} de {totalPages} • {totalItems} {itemName}
+          Página {currentPage} de {totalPages}
         </Text>
       )}
 

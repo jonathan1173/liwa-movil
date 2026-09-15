@@ -55,31 +55,31 @@ export default function BibliotecaScreen() {
     if (!searchQuery.trim()) return items;
     const q = searchQuery.toLowerCase().trim();
     return items.filter((item) =>
-      item.titulo.toLowerCase().includes(q)
+      item.title_book.toLowerCase().includes(q)
     );
   }, [items, searchQuery]);
 
   async function handleDownload(item: BibliotecaItem) {
-    if (!item.archivo_url) {
+    if (!item.url_download) {
       Alert.alert('Aviso', 'El enlace de descarga no está disponible.');
       return;
     }
 
     try {
       setOpeningId(item.id);
-      const supported = await Linking.canOpenURL(item.archivo_url);
+      const supported = await Linking.canOpenURL(item.url_download);
       if (supported) {
         if (Platform.OS === 'web') {
-          window.open(item.archivo_url, '_blank');
+          window.open(item.url_download, '_blank');
         } else {
-          await WebBrowser.openBrowserAsync(item.archivo_url);
+          await WebBrowser.openBrowserAsync(item.url_download);
         }
       } else {
-        await Linking.openURL(item.archivo_url);
+        await Linking.openURL(item.url_download);
       }
     } catch {
       try {
-        await Linking.openURL(item.archivo_url);
+        await Linking.openURL(item.url_download);
       } catch {
         Alert.alert('Error', 'No se pudo abrir el archivo descargable.');
       }
@@ -159,9 +159,9 @@ export default function BibliotecaScreen() {
                 <View style={styles.card}>
                   {/* Portada izquierda */}
                   <View style={styles.coverWrapper}>
-                    {item.portada_url ? (
+                    {item.url_image ? (
                       <Image
-                        source={{ uri: item.portada_url }}
+                        source={{ uri: item.url_image }}
                         style={styles.coverImage}
                         resizeMode="cover"
                       />
@@ -175,10 +175,10 @@ export default function BibliotecaScreen() {
                   {/* Información central */}
                   <View style={styles.infoWrapper}>
                     <Text style={styles.cardTitle} numberOfLines={2}>
-                      {item.titulo}
+                      {item.title_book}
                     </Text>
                     <Text style={styles.cardMeta}>
-                      {item.tamano || '4 MB'}
+                      Documento PDF
                     </Text>
                   </View>
 

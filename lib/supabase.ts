@@ -1117,104 +1117,86 @@ export async function addCommunityComment(postId: number, content: string, userI
   const newCount = (currentPost?.comments_count ?? 0) + 1;
   await supabase.from('community_post').update({ comments_count: newCount }).eq('id', postId);
 }
+// ─── Biblioteca / Library Helpers ──────────────────────────────────────────
 
-// ─── Biblioteca Helpers ──────────────────────────────────────────────────────
-
-export interface BibliotecaItem {
+export interface LibraryItem {
   id: number;
-  titulo: string;
-  archivo_url: string;
-  portada_url?: string | null;
-  tamano?: string | null;
-  created_at?: string;
+  title_book: string;
+  url_download: string | null;
+  url_image: string | null;
 }
 
-export const FALLBACK_BIBLIOTECA_ITEMS: BibliotecaItem[] = [
-  {
-    id: 1,
-    titulo: 'Cartilla Mujer y Derechos - Creole',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Mujer%20y%20Derechos%20-%20Creole.jpg',
-    tamano: '4 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    titulo: 'Cartilla Mujer y Derechos - Miskito',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Mujer%20y%20Derechos%20-%20Creole.jpg',
-    tamano: '4 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    titulo: 'Guía de Emprendimiento y Finanzas Básicas',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Brochure%20Mujeres%20Aprendiendo,%20Emprendiendo,%20Trabajando%20y%20Prosperando.jpg',
-    tamano: '2.5 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 4,
-    titulo: 'Manual de Trueque y Comercio Comunitario',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Galeria%20Mujeres%20Bicentenarias.jpg',
-    tamano: '3.8 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 5,
-    titulo: 'Cartilla Aprendamos de Genero',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Aprendamos%20de%20Genero.jpg',
-    tamano: '3.8 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 6,
-    titulo: 'Cartilla para la Promoción de Valores Equidad y Complementariedad',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20para%20la%20Promoci%C3%B3n%20de%20Valores%20Equidad%20y%20Complementariedad.jpg',
-    tamano: '3.8 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 7,
-    titulo: 'Cartilla Mujer, Derechos y Empoderamiento Económico',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Cartilla%20Mujer,%20Derechos%20y%20Empoderamiento%20Econ%C3%B3mico.jpg',
-    tamano: '3.8 MB',
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 8,
-    titulo: 'Brochure Cuido Amoroso de l@s Adult@s Mayores',
-    archivo_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    portada_url: 'https://www.minim.gob.ni/storage/documents/previews/Brochure%20Cuido%20Amoroso%20de%20l@s%20Adult@s%20Mayores.jpg',
-    tamano: '3.8 MB',
-    created_at: new Date().toISOString(),
-  },
-];
+// Alias de tipo para retrocompatibilidad
+export type BibliotecaItem = LibraryItem;
 
-export async function getBibliotecaItems(): Promise<BibliotecaItem[]> {
+/**
+ * Obtiene todos los libros y documentos de la tabla public.library
+ */
+export async function getLibraryItems(): Promise<LibraryItem[]> {
   try {
     const { data, error } = await supabase
-      .from('biblioteca')
+      .from('library')
       .select('*')
       .order('id', { ascending: true });
 
     if (error) {
-      console.warn('Error fetching biblioteca from Supabase, using fallback data:', error.message);
-      return FALLBACK_BIBLIOTECA_ITEMS;
+      console.error('Error fetching library from Supabase:', error.message);
+      return [];
     }
 
-    if (!data || data.length === 0) {
-      return FALLBACK_BIBLIOTECA_ITEMS;
-    }
-
-    return data;
+    return (data as LibraryItem[]) || [];
   } catch (err) {
-    console.warn('Exception in getBibliotecaItems, using fallback data:', err);
-    return FALLBACK_BIBLIOTECA_ITEMS;
+    console.error('Exception in getLibraryItems:', err);
+    return [];
   }
 }
+
+/**
+ * Obtiene un documento de la biblioteca por su ID
+ */
+export async function getLibraryItemById(id: number): Promise<LibraryItem | null> {
+  try {
+    const { data, error } = await supabase
+      .from('library')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error(`Error fetching library item ${id}:`, error.message);
+      return null;
+    }
+
+    return data as LibraryItem;
+  } catch (err) {
+    console.error(`Exception in getLibraryItemById(${id}):`, err);
+    return null;
+  }
+}
+
+/**
+ * Busca documentos en la biblioteca por título
+ */
+export async function searchLibraryItems(query: string): Promise<LibraryItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('library')
+      .select('*')
+      .ilike('title_book', `%${query}%`)
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error('Error searching library items:', error.message);
+      return [];
+    }
+
+    return (data as LibraryItem[]) || [];
+  } catch (err) {
+    console.error('Exception in searchLibraryItems:', err);
+    return [];
+  }
+}
+
+// Alias para mantener compatibilidad con imports existentes
+export const getBibliotecaItems = getLibraryItems;
+

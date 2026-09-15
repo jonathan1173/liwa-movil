@@ -14,9 +14,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 function ProductCard({ product }: { product: Product }) {
@@ -138,7 +137,7 @@ export default function ExplorarScreen() {
     return list;
   }, [products, searchQuery, filters]);
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 20;
   const [currentPage, setCurrentPage] = useState(1);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -236,7 +235,6 @@ export default function ExplorarScreen() {
         {/* Encabezado de la lista */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Productos y Servicios</Text>
-          <Text style={styles.resultCount}>{filteredProducts.length} disponibles</Text>
         </View>
 
         {/* Estado de Carga */}
@@ -416,6 +414,8 @@ const styles = StyleSheet.create({
   cardBody: {
     padding: 12,
     gap: 4,
+    height: 110,
+    justifyContent: 'space-between',
   },
   productTitle: {
     color: Colors.darkGray,
