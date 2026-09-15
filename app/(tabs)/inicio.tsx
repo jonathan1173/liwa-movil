@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useIsFocused } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import {
   Image,
@@ -14,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function InicioScreen() {
+  const isFocused = useIsFocused();
   const [initials, setInitials] = useState('JD');
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function InicioScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <StatusBar style="dark" />
+      {isFocused && <StatusBar style="dark" />}
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { checkProfileCompleted, supabase } from '@/lib/supabase';
 import { UpdateModal } from '@/components/UpdateModal';
+import { StatusBar } from 'expo-status-bar';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -79,20 +80,23 @@ function RootLayoutNav() {
   }, []);
 
   return (
-    <Stack>
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="mis-publicaciones" options={{ headerShown: false }} />
-      <Stack.Screen name="favoritos" options={{ headerShown: false }} />
-      <Stack.Screen name="producto/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="producto/editar/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="trueque-inteligente" options={{ headerShown: false }} />
-      <Stack.Screen name="mapa-vendedores" options={{ headerShown: false }} />
-      <Stack.Screen name="ajustes-perfil" options={{ headerShown: false }} />
-      <Stack.Screen name="comunidad/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="biblioteca" options={{ headerShown: false }} />
-      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      <UpdateModal />
-    </Stack>
+    <>
+      <StatusBar style="light" />
+      <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="mis-publicaciones" options={{ headerShown: false }} />
+        <Stack.Screen name="favoritos" options={{ headerShown: false }} />
+        <Stack.Screen name="producto/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="producto/editar/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="trueque-inteligente" options={{ headerShown: false }} />
+        <Stack.Screen name="mapa-vendedores" options={{ headerShown: false }} />
+        <Stack.Screen name="ajustes-perfil" options={{ headerShown: false }} />
+        <Stack.Screen name="comunidad/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="biblioteca" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <UpdateModal />
+      </Stack>
+    </>
   );
 }
