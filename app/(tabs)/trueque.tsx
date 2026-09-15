@@ -15,9 +15,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 function ProductCard({ product }: { product: Product }) {
@@ -161,7 +160,7 @@ export default function TruequeScreen() {
     return list;
   }, [products, searchQuery, filters]);
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 20;
   const [currentPage, setCurrentPage] = useState(1);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -260,7 +259,6 @@ export default function TruequeScreen() {
         {/* Encabezado de la sección */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Productos Disponibles</Text>
-          <Text style={styles.resultCount}>{filteredProducts.length} disponibles</Text>
         </View>
 
         {/* Carga */}
@@ -418,6 +416,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
+    height:290,
+    justifyContent: 'space-between',
+    alignContent: 'space-between',
+ 
   },
   imageBox: {
     width: '100%',
@@ -440,6 +442,7 @@ const styles = StyleSheet.create({
   cardBody: {
     padding: 12,
     gap: 6,
+
   },
   productTitle: {
     color: Colors.darkGray,
