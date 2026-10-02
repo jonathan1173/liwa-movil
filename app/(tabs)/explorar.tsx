@@ -8,6 +8,7 @@ import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   RefreshControl,
   SafeAreaView,
@@ -162,6 +163,18 @@ export default function ExplorarScreen() {
     setCurrentPage(page);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.replace('/(tabs)/inicio' as any);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={[neumorphicStyles.screen, styles.screenBg]}>

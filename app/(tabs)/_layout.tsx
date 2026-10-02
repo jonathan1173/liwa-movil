@@ -9,6 +9,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      backBehavior="firstRoute"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,

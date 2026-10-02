@@ -1,14 +1,18 @@
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useIsFocused } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
+  BackHandler,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -17,6 +21,55 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function InicioScreen() {
   const isFocused = useIsFocused();
   const [initials, setInitials] = useState('JD');
+
+  useFocusEffect(
+    useCallback(() => {
+      let backPressCount = 0;
+      let timer: ReturnType<typeof setTimeout> | null = null;
+
+      const onBackPress = () => {
+        backPressCount += 1;
+
+        if (backPressCount === 1) {
+          if (Platform.OS === 'android') {
+            ToastAndroid.show('Presiona atrás otra vez para salir', ToastAndroid.SHORT);
+          }
+          timer = setTimeout(() => {
+            backPressCount = 0;
+          }, 2000);
+          return true;
+        }
+
+        if (backPressCount >= 2) {
+          if (timer) clearTimeout(timer);
+          backPressCount = 0;
+
+          Alert.alert(
+            'Salir de Liwa',
+            '¿Quieres salir de la app?',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              {
+                text: 'Salir',
+                style: 'destructive',
+                onPress: () => BackHandler.exitApp(),
+              },
+            ],
+            { cancelable: true }
+          );
+          return true;
+        }
+
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => {
+        if (timer) clearTimeout(timer);
+        subscription.remove();
+      };
+    }, [])
+  );
 
   useEffect(() => {
     async function loadUserData() {

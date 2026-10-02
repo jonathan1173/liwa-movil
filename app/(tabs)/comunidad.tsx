@@ -14,6 +14,7 @@ import { router, useFocusEffect } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Image,
   Modal,
@@ -66,6 +67,14 @@ export default function ComunidadScreen() {
     useCallback(() => {
       fetchPosts();
       loadCities();
+
+      const onBackPress = () => {
+        router.replace('/(tabs)/inicio' as any);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, [fetchPosts, loadCities])
   );
 

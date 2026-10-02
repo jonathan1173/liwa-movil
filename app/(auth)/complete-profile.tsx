@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/authContext';
 import {
   ActivityIndicator,
   Alert,
@@ -106,6 +107,7 @@ function PickerField({ label, value, options, onSelect, placeholder = 'Seleccion
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function CompleteProfileScreen() {
+  const { refreshAuth } = useAuth();
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -180,6 +182,7 @@ export default function CompleteProfileScreen() {
         profile_completed: true,
       });
 
+      await refreshAuth();
       router.replace('/(tabs)/inicio' as any);
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'No se pudo guardar el perfil');

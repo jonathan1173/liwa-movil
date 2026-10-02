@@ -10,11 +10,12 @@ import {
   toggleCommunityPostLike,
 } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -58,6 +59,26 @@ export default function CommunityPostDetailScreen() {
     }
     loadData();
   }, [postId]);
+
+  const handleBack = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/comunidad' as any);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack])
+  );
 
   async function handleToggleLike() {
     if (!post || !currentUserId) return;
@@ -124,7 +145,7 @@ export default function CommunityPostDetailScreen() {
 
   return (
     <SafeAreaView style={neumorphicStyles.screen}>
-      <AppHeader title={isEvento ? 'Evento' : 'Anuncio'} showBack />
+      <AppHeader title={isEvento ? 'Evento' : 'Anuncio'} showBack onBackPress={handleBack} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

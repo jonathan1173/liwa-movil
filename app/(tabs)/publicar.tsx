@@ -156,11 +156,7 @@ export default function PublicarScreen() {
   const [priceError, setPriceError] = useState('');
 
   const handleBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)/inicio' as any);
-    }
+    router.replace('/(tabs)/inicio' as any);
   }, []);
 
   useFocusEffect(

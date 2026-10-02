@@ -116,11 +116,7 @@ export default function TruequeScreen() {
       fetchProducts();
 
       const onBackPress = () => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)/inicio' as any);
-        }
+        router.replace('/(tabs)/inicio' as any);
         return true;
       };
 

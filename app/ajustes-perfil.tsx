@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  BackHandler,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { Colors, neumorphicStyles } from '@/constants/NeumorphicStyles';
@@ -105,6 +106,22 @@ export default function AjustesPerfilScreen() {
     }
   }
 
+  const handleBack = useCallback(() => {
+    router.replace('/(tabs)/perfil' as any);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [handleBack])
+  );
+
   if (loading) {
     return (
       <View style={[neumorphicStyles.screen, styles.centered]}>
@@ -119,7 +136,7 @@ export default function AjustesPerfilScreen() {
       style={neumorphicStyles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <AppHeader title="Ajustes de Perfil" showBack={true} showNotif={false} />
+      <AppHeader title="Ajustes de Perfil" showBack={true} onBackPress={handleBack} showNotif={false} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}

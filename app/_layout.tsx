@@ -1,23 +1,18 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
-import { checkProfileCompleted, supabase } from '@/lib/supabase';
-import { UpdateModal } from '@/components/UpdateModal';
 import { StatusBar } from 'expo-status-bar';
+
+import { AuthProvider, useAuth } from '@/lib/authContext';
+import { UpdateModal } from '@/components/UpdateModal';
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary
+  ErrorBoundary,
 } from 'expo-router';
-
-export const unstable_settings = {
-  // Start from the auth group so unauthenticated users land on login.
-  initialRouteName: '(auth)',
-};
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,70 +28,55 @@ export default function RootLayout() {
     if (error) throw error;
   }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
   if (!loaded) {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav fontsLoaded={loaded} />
+    </AuthProvider>
+  );
 }
 
-function RootLayoutNav() {
-  // Listen for auth state changes at the root level to handle session restores.
+function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { isAuthenticated, isProfileCompleted, isLoading } = useAuth();
+
   useEffect(() => {
-    // Check existing session on mount
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        try {
-          const completed = await checkProfileCompleted(session.user.id);
-          if (completed) {
-            router.replace('/(tabs)/inicio' as any);
-          } else {
-            router.replace('/(auth)/complete-profile' as any);
-          }
-        } catch {
-          router.replace('/(auth)/login' as any);
-        }
-      } else {
-        router.replace('/(auth)/login' as any);
-      }
-    });
+    if (fontsLoaded && !isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, isLoading]);
 
-    // Subscribe to future auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          router.replace('/(auth)/login' as any);
-        }
-      },
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <>
       <StatusBar style="light" />
       <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="mis-publicaciones" options={{ headerShown: false }} />
-        <Stack.Screen name="favoritos" options={{ headerShown: false }} />
-        <Stack.Screen name="producto/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="producto/editar/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="trueque-inteligente" options={{ headerShown: false }} />
-        <Stack.Screen name="mapa-vendedores" options={{ headerShown: false }} />
-        <Stack.Screen name="ajustes-perfil" options={{ headerShown: false }} />
-        <Stack.Screen name="comunidad/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="biblioteca" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        <UpdateModal />
+        {/* Rutas de autenticación (Login, Registro, Completar Perfil) */}
+        <Stack.Protected guard={!isAuthenticated || !isProfileCompleted}>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack.Protected>
+
+        {/* Rutas autenticadas de la aplicación */}
+        <Stack.Protected guard={isAuthenticated && isProfileCompleted}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="mis-publicaciones" options={{ headerShown: false }} />
+          <Stack.Screen name="favoritos" options={{ headerShown: false }} />
+          <Stack.Screen name="producto/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="producto/editar/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="trueque-inteligente" options={{ headerShown: false }} />
+          <Stack.Screen name="mapa-vendedores" options={{ headerShown: false }} />
+          <Stack.Screen name="ajustes-perfil" options={{ headerShown: false }} />
+          <Stack.Screen name="comunidad/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="biblioteca" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack.Protected>
       </Stack>
+      <UpdateModal />
     </>
   );
 }

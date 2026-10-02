@@ -18,8 +18,10 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide';
 import AuthBackground from '@/components/AuthBackground';
 import { Colors } from '@/constants/NeumorphicStyles';
 import { checkProfileCompleted, signUp } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function RegisterScreen() {
+  const { refreshAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -81,6 +83,7 @@ export default function RegisterScreen() {
       }
 
       const completed = await checkProfileCompleted(userId);
+      await refreshAuth();
       if (completed) {
         router.replace('/(tabs)/inicio' as any);
       } else {

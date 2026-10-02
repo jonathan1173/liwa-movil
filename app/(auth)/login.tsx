@@ -18,8 +18,10 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide';
 import AuthBackground from '@/components/AuthBackground';
 import { Colors } from '@/constants/NeumorphicStyles';
 import { checkProfileCompleted, signIn } from '@/lib/supabase';
+import { useAuth } from '@/lib/authContext';
 
 export default function LoginScreen() {
+  const { refreshAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -57,6 +59,7 @@ export default function LoginScreen() {
       if (!userId) throw new Error('No se pudo obtener el usuario');
 
       const completed = await checkProfileCompleted(userId);
+      await refreshAuth();
       if (completed) {
         router.replace('/(tabs)/inicio' as any);
       } else {

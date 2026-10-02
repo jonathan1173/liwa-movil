@@ -2,10 +2,11 @@ import AppHeader from '@/components/AppHeader';
 import { Colors } from '@/constants/NeumorphicStyles';
 import { getMyProducts, getSellerLocations, Product, SellerLocation } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   Linking,
   Modal,
@@ -44,6 +45,22 @@ export default function MapaVendedoresScreen() {
     }
     loadData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (selectedSeller) {
+          setSelectedSeller(null);
+          return true;
+        }
+        router.replace('/(tabs)/inicio' as any);
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [selectedSeller])
+  );
 
   // Cargar productos del vendedor cuando se selecciona uno
   useEffect(() => {
