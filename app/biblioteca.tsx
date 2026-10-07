@@ -6,8 +6,10 @@ import {
   FlatList,
   Image,
   Linking,
+  Modal,
   Platform,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -21,15 +23,14 @@ import * as WebBrowser from 'expo-web-browser';
 import AuthBackground from '@/components/AuthBackground';
 import { BibliotecaItem, getBibliotecaItems } from '@/lib/supabase';
 
-// Colores alternados para los botones de descarga tal como se ve en la maqueta
-const BUTTON_COLORS = ['#38BDF8', '#E07A5F', '#0284C7', '#EC006C'];
-
 export default function BibliotecaScreen() {
   const [items, setItems] = useState<BibliotecaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [openingId, setOpeningId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<BibliotecaItem | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -71,13 +72,17 @@ export default function BibliotecaScreen() {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        if (selectedItem) {
+          setSelectedItem(null);
+          return true;
+        }
         handleBack();
         return true;
       };
 
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, [handleBack])
+    }, [handleBack, selectedItem])
   );
 
   async function handleDownload(item: BibliotecaItem) {
@@ -106,6 +111,36 @@ export default function BibliotecaScreen() {
       }
     } finally {
       setOpeningId(null);
+    }
+  }
+
+  async function handleCopyLink(item: BibliotecaItem) {
+    if (!item.url_download) {
+      Alert.alert('Aviso', 'El enlace de descarga no está disponible.');
+      return;
+    }
+
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(item.url_download);
+      } else {
+        try {
+          await Share.share({
+            title: item.title_book,
+            message: item.url_download,
+            url: item.url_download,
+          });
+        } catch {
+          // ignore share dismiss
+        }
+      }
+
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2500);
+    } catch (err) {
+      console.warn('Error al copiar o compartir enlace:', err);
     }
   }
 
@@ -172,51 +207,68 @@ export default function BibliotecaScreen() {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0284C7" />
             }
-            renderItem={({ item, index }) => {
-              const btnColor = BUTTON_COLORS[index % BUTTON_COLORS.length];
+            renderItem={({ item }) => {
               const isDownloading = openingId === item.id;
 
               return (
-                <View style={styles.card}>
-                  {/* Portada izquierda */}
-                  <View style={styles.coverWrapper}>
+                <TouchableOpacity
+                  style={styles.card}
+                  activeOpacity={0.92}
+                  onPress={() => setSelectedItem(item)}
+                >
+                  {/* Imagen de portada con badge Digital */}
+                  <View style={styles.cardImageWrapper}>
                     {item.url_image ? (
                       <Image
                         source={{ uri: item.url_image }}
-                        style={styles.coverImage}
+                        style={styles.cardCoverImage}
                         resizeMode="cover"
                       />
                     ) : (
                       <View style={styles.placeholderCover}>
-                        <Ionicons name="document-text" size={28} color="#E06A4E" />
+                        <Ionicons name="book-outline" size={54} color="#7C3AED" />
                       </View>
                     )}
+
+                    {/* Badge "Digital" flotante */}
+                    <View style={styles.digitalBadge}>
+                      <Ionicons name="document-text-outline" size={13} color="#374151" />
+                      <Text style={styles.digitalBadgeText}>Digital</Text>
+                    </View>
                   </View>
 
-                  {/* Información central */}
-                  <View style={styles.infoWrapper}>
-                    <Text style={styles.cardTitle} numberOfLines={2}>
-                      {item.title_book}
-                    </Text>
-                    <Text style={styles.cardMeta}>
-                      Documento PDF
-                    </Text>
-                  </View>
+                  {/* Título de la cartilla */}
+                  <Text style={styles.cardTitle} numberOfLines={2}>
+                    {item.title_book}
+                  </Text>
 
-                  {/* Botón de Descargar a la derecha */}
-                  <TouchableOpacity
-                    style={[styles.downloadBtn, { backgroundColor: btnColor }]}
-                    onPress={() => handleDownload(item)}
-                    activeOpacity={0.82}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.downloadBtnText}>DESCARGAR</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
+                  {/* Fila de acciones inferiores */}
+                  <View style={styles.cardActionsRow}>
+                    <TouchableOpacity
+                      style={styles.cardDownloadBtn}
+                      onPress={() => handleDownload(item)}
+                      activeOpacity={0.85}
+                      disabled={isDownloading}
+                    >
+                      {isDownloading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <>
+                          <Ionicons name="download-outline" size={17} color="#FFFFFF" />
+                          <Text style={styles.cardDownloadBtnText}>Descargar</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.cardExternalBtn}
+                      onPress={() => handleDownload(item)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="open-outline" size={18} color="#4B5563" />
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
               );
             }}
             ListEmptyComponent={
@@ -234,6 +286,102 @@ export default function BibliotecaScreen() {
             }
           />
         )}
+
+        {/* Modal de Detalle del Libro */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={!!selectedItem}
+          onRequestClose={() => setSelectedItem(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => setSelectedItem(null)}
+            />
+
+            <View style={styles.modalCard}>
+              {/* Botón cerrar X */}
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setSelectedItem(null)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="close" size={22} color="#94A3B8" />
+              </TouchableOpacity>
+
+              {/* Portada centrada */}
+              <View style={styles.modalCoverBox}>
+                {selectedItem?.url_image ? (
+                  <Image
+                    source={{ uri: selectedItem.url_image }}
+                    style={styles.modalCoverImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.modalCoverPlaceholder}>
+                    <Ionicons name="book-outline" size={48} color="#7C3AED" />
+                  </View>
+                )}
+              </View>
+
+              {/* Badge "Libro Comunitario" */}
+              <View style={styles.communityBadge}>
+                <Ionicons name="sparkles" size={13} color="#5B21B6" />
+                <Text style={styles.communityBadgeText}>Libro Comunitario</Text>
+              </View>
+
+              {/* Título */}
+              <Text style={styles.modalTitle}>
+                {selectedItem?.title_book}
+              </Text>
+
+              {/* Subtítulo / Descripción */}
+              <Text style={styles.modalSubtitle}>
+                Formato digital para lectura y consulta libre en la comunidad Liwa.
+              </Text>
+
+              {/* Botón Principal: Abrir o Descargar Libro */}
+              <TouchableOpacity
+                style={styles.modalPrimaryBtn}
+                activeOpacity={0.85}
+                onPress={() => selectedItem && handleDownload(selectedItem)}
+                disabled={selectedItem ? openingId === selectedItem.id : false}
+              >
+                {selectedItem && openingId === selectedItem.id ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Ionicons name="download-outline" size={19} color="#FFFFFF" />
+                    <Text style={styles.modalPrimaryBtnText}>Abrir o Descargar Libro</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Botón Secundario: Copiar enlace de descarga */}
+              <TouchableOpacity
+                style={styles.modalSecondaryBtn}
+                activeOpacity={0.8}
+                onPress={() => selectedItem && handleCopyLink(selectedItem)}
+              >
+                <Ionicons
+                  name={copied ? 'checkmark-circle' : 'copy-outline'}
+                  size={18}
+                  color={copied ? '#10B981' : '#475569'}
+                />
+                <Text
+                  style={[
+                    styles.modalSecondaryBtnText,
+                    copied && { color: '#10B981', fontWeight: '700' },
+                  ]}
+                >
+                  {copied ? '¡Enlace copiado!' : 'Copiar enlace de descarga'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </AuthBackground>
   );
@@ -320,35 +468,30 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 14,
+    paddingBottom: 36,
+    gap: 18,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 24,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#F1F5F9',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  coverWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
+  cardImageWrapper: {
+    width: '100%',
+    height: 250,
+    borderRadius: 18,
     overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
-    marginRight: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F8FAFC',
+    position: 'relative',
   },
-  coverImage: {
+  cardCoverImage: {
     width: '100%',
     height: '100%',
   },
@@ -356,43 +499,74 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF5F8',
+    backgroundColor: '#FAF5FF',
   },
-  infoWrapper: {
-    flex: 1,
-    marginRight: 12,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#E06A4E',
-    lineHeight: 20,
-    letterSpacing: -0.2,
-  },
-  cardMeta: {
-    fontSize: 12.5,
-    color: '#9CA3AF',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  downloadBtn: {
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  digitalBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 100,
-    shadowColor: '#000',
+    gap: 5,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  downloadBtnText: {
+  digitalBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  cardTitle: {
+    fontSize: 16.5,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 14,
+    lineHeight: 22,
+    letterSpacing: -0.3,
+    paddingHorizontal: 2,
+  },
+  cardActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    gap: 10,
+  },
+  cardDownloadBtn: {
+    flex: 1,
+    backgroundColor: '#4C1D95',
+    borderRadius: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    shadowColor: '#4C1D95',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cardDownloadBtnText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.6,
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+  cardExternalBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centered: {
     flex: 1,
@@ -424,5 +598,133 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 19,
+  },
+  // ── Modal Styles ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.62)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 22,
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+    position: 'relative',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  modalCloseBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 18,
+    zIndex: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCoverBox: {
+    width: 140,
+    height: 155,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: '#F8FAFC',
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalCoverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalCoverPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FAF5FF',
+  },
+  communityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  communityBadgeText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#5B21B6',
+  },
+  modalTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 25,
+    marginBottom: 8,
+    paddingHorizontal: 6,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 22,
+    paddingHorizontal: 8,
+  },
+  modalPrimaryBtn: {
+    width: '100%',
+    backgroundColor: '#4C1D95',
+    borderRadius: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 10,
+    shadowColor: '#4C1D95',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalPrimaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  modalSecondaryBtn: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingVertical: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  modalSecondaryBtnText: {
+    fontSize: 13.5,
+    color: '#475569',
+    fontWeight: '600',
   },
 });
