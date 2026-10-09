@@ -82,30 +82,112 @@ export interface SellerLocation {
   city?: { name: string } | null;
 }
 
-export async function getSellerLocations(): Promise<SellerLocation[]> {
-  const { data, error } = await supabase
-    .from('profile')
-    .select(`
-      id,
-      full_name,
-      username,
-      phone,
-      latitude,
-      longitude,
-      city:city_id ( name )
-    `)
-    .not('latitude', 'is', null)
-    .not('longitude', 'is', null);
+export const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  managua: { lat: 12.1364, lng: -86.2514 },
+  león: { lat: 12.4379, lng: -86.878 },
+  leon: { lat: 12.4379, lng: -86.878 },
+  granada: { lat: 11.9299, lng: -85.956 },
+  masaya: { lat: 11.9744, lng: -86.0942 },
+  matagalpa: { lat: 12.9256, lng: -85.9175 },
+  estelí: { lat: 13.0919, lng: -86.3538 },
+  esteli: { lat: 13.0919, lng: -86.3538 },
+  chinandega: { lat: 12.6294, lng: -87.1311 },
+  jinotega: { lat: 13.0921, lng: -86.0028 },
+  rivas: { lat: 11.4372, lng: -85.8263 },
+  carazo: { lat: 11.8541, lng: -86.2081 },
+  'nueva segovia': { lat: 13.6276, lng: -86.4754 },
+  madriz: { lat: 13.4614, lng: -86.5828 },
+  boaco: { lat: 12.4722, lng: -85.6586 },
+  chontales: { lat: 12.0624, lng: -85.3678 },
+  'río san juan': { lat: 11.2064, lng: -84.6989 },
+  'rio san juan': { lat: 11.2064, lng: -84.6989 },
+  bilwi: { lat: 14.0351, lng: -83.3888 },
+  'puerto cabezas': { lat: 14.0351, lng: -83.3888 },
+  bluefields: { lat: 12.0137, lng: -83.7635 },
+};
 
-  if (error) {
-    console.warn('Error fetching seller locations:', error);
-    return [];
+export function getResolvedCoordinates(
+  lat: number | string | null | undefined,
+  lng: number | string | null | undefined,
+  cityName?: string | null,
+  seedId?: string | null
+): { latitude: number; longitude: number } {
+  const parsedLat = typeof lat === 'number' ? lat : parseFloat(String(lat ?? ''));
+  const parsedLng = typeof lng === 'number' ? lng : parseFloat(String(lng ?? ''));
+
+  if (!isNaN(parsedLat) && !isNaN(parsedLng) && parsedLat !== 0 && parsedLng !== 0) {
+    return { latitude: parsedLat, longitude: parsedLng };
   }
 
-  return (data ?? []).map((p: any) => ({
-    ...p,
-    city: Array.isArray(p.city) ? (p.city[0] ?? null) : (p.city ?? null),
-  }));
+  let baseCoords = { lat: 12.1364, lng: -86.2514 }; // Managua por defecto
+  if (cityName) {
+    const cleanCity = cityName.toLowerCase().trim();
+    for (const [key, coords] of Object.entries(CITY_COORDINATES)) {
+      if (cleanCity.includes(key) || key.includes(cleanCity)) {
+        baseCoords = coords;
+        break;
+      }
+    }
+  }
+
+  let hash = 0;
+  const seed = String(seedId || cityName || 'liwa');
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const angle = (Math.abs(hash) % 360) * (Math.PI / 180);
+  const distance = 0.003 + ((Math.abs(hash >> 3) % 100) / 100) * 0.008;
+
+  return {
+    latitude: parseFloat((baseCoords.lat + Math.sin(angle) * distance).toFixed(6)),
+    longitude: parseFloat((baseCoords.lng + Math.cos(angle) * distance).toFixed(6)),
+  };
+}
+
+export async function getSellerLocations(): Promise<SellerLocation[]> {
+  let citiesMap = new Map<number, string>();
+  try {
+    const { data: cData } = await supabase.from('city').select('id, name');
+    (cData ?? []).forEach((c: any) => citiesMap.set(c.id, c.name));
+  } catch {
+    // ignore
+  }
+
+  let rawProfiles: any[] = [];
+  try {
+    const { data, error } = await supabase.from('profile').select('*');
+    if (!error && data && data.length > 0) {
+      rawProfiles = data;
+    } else {
+      const { data: minData } = await supabase
+        .from('profile')
+        .select('id, full_name, username, phone, latitude, longitude, city_id');
+      if (minData) rawProfiles = minData;
+    }
+  } catch (err) {
+    console.warn('Error fetching seller locations:', err);
+  }
+
+  return rawProfiles.map((p: any) => {
+    const resolvedCityName =
+      p.city?.name ||
+      (typeof p.city === 'string' ? p.city : null) ||
+      (p.city_id ? citiesMap.get(p.city_id) : null) ||
+      null;
+
+    const coords = getResolvedCoordinates(p.latitude, p.longitude, resolvedCityName, p.id);
+
+    return {
+      id: p.id,
+      full_name: p.full_name || p.username || 'Vendedor',
+      username: p.username || (p.full_name ? p.full_name.split(' ')[0].toLowerCase() : 'vendedor'),
+      phone: p.phone ?? null,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      city: resolvedCityName ? { name: resolvedCityName } : null,
+    };
+  });
 }
 
 // ─── Catalog helpers ─────────────────────────────────────────────────────────

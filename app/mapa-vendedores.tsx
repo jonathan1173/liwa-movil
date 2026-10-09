@@ -86,37 +86,21 @@ export default function MapaVendedoresScreen() {
     loadSellerProducts();
   }, [selectedSeller]);
 
-  // Coordenadas iniciales por defecto (Honduras - Tegucigalpa)
-  const defaultLat = sellers.length > 0 ? sellers[0].latitude : 14.0723;
-  const defaultLng = sellers.length > 0 ? sellers[0].longitude : -87.1921;
+  // Coordenadas iniciales por defecto (Nicaragua - Managua)
+  const defaultLat = sellers.length > 0 ? Number(sellers[0].latitude) : 12.1364;
+  const defaultLng = sellers.length > 0 ? Number(sellers[0].longitude) : -86.2514;
 
-  // Generación de marcadores HTML personalizados sin el marcador azul por defecto (solo la etiqueta de username)
-  const markersScript = sellers
-    .map(
-      (s) => `
-        var customIcon = L.divIcon({
-          className: 'custom-username-pin',
-          html: '<div class="username-box">@${s.username || s.full_name || 'vendedor'}</div>',
-          iconSize: [100, 30],
-          iconAnchor: [50, 15]
-        });
+  // Serialización segura de datos de vendedores para Leaflet (evita rotura de sintaxis por comillas o caracteres especiales)
+  const sanitizedSellers = sellers
+    .map((s) => ({
+      id: s.id,
+      name: s.username || s.full_name || 'vendedor',
+      lat: Number(s.latitude),
+      lng: Number(s.longitude),
+    }))
+    .filter((s) => !isNaN(s.lat) && !isNaN(s.lng));
 
-        var m = L.marker([${s.latitude}, ${s.longitude}], { icon: customIcon }).addTo(map);
-
-        m.on('click', function(e) {
-          if (e && e.originalEvent) {
-            e.originalEvent.stopPropagation();
-          }
-          var data = JSON.stringify({ id: "${s.id}" });
-          if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-            window.ReactNativeWebView.postMessage(data);
-          } else if (window.parent) {
-            window.parent.postMessage(data, '*');
-          }
-        });
-      `
-    )
-    .join('\n');
+  const sellersJson = JSON.stringify(sanitizedSellers);
 
   const mapHtml = `
     <!DOCTYPE html>
@@ -162,7 +146,39 @@ export default function MapaVendedoresScreen() {
             attribution: '© OpenStreetMap'
           }).addTo(map);
 
-          ${markersScript}
+          var sellersData = ${sellersJson};
+          var markers = [];
+
+          sellersData.forEach(function(s) {
+            var customIcon = L.divIcon({
+              className: 'custom-username-pin',
+              html: '<div class="username-box">@' + (s.name || 'vendedor') + '</div>',
+              iconSize: [100, 30],
+              iconAnchor: [50, 15]
+            });
+
+            var m = L.marker([s.lat, s.lng], { icon: customIcon }).addTo(map);
+            markers.push(m);
+
+            m.on('click', function(e) {
+              if (e && e.originalEvent) {
+                e.originalEvent.stopPropagation();
+              }
+              var data = JSON.stringify({ id: s.id });
+              if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+                window.ReactNativeWebView.postMessage(data);
+              } else if (window.parent) {
+                window.parent.postMessage(data, '*');
+              }
+            });
+          });
+
+          if (markers.length > 1) {
+            var group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.15));
+          } else if (markers.length === 1) {
+            map.setView([sellersData[0].lat, sellersData[0].lng], 14);
+          }
         </script>
       </body>
     </html>
@@ -214,12 +230,14 @@ export default function MapaVendedoresScreen() {
             />
           ) : (
             <WebView
+              key={`map-${sanitizedSellers.length}`}
               originWhitelist={['*']}
-              source={{ html: mapHtml }}
+              source={{ html: mapHtml, baseUrl: 'https://unpkg.com' }}
               style={styles.webContainer}
               onMessage={onMapMessage}
               javaScriptEnabled={true}
               domStorageEnabled={true}
+              mixedContentMode="always"
             />
           )}
         </View>
